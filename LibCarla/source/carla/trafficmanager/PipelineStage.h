@@ -33,20 +33,13 @@ namespace traffic_manager {
   /// various stages of the pipeline.
   class PipelineStage {
 
-  private:
-    std::unique_ptr<std::thread> worker_thread;
-
   protected:
-    /// Flag to start/stop stage.
-    std::atomic<bool> run_stage;
     /// Stage name string.
     std::string stage_name;
 
   private:
     /// Object to track stage performance.
     PerformanceDiagnostics performance_diagnostics;
-
-    void Update();
 
   protected:
 
@@ -64,13 +57,8 @@ namespace traffic_manager {
   public:
 
     PipelineStage(const std::string &stage_name);
-
     virtual ~PipelineStage();
-
-    void Start();
-
-    void Stop();
-
+    void Update();
   };
 
 } // namespace traffic_manager

@@ -97,12 +97,18 @@ void TrafficManagerLocal::Start() {
   traffic_light_planner_messenger->Start();
   planner_control_messenger->Start();
 
-  localization_stage->Start();
-  collision_stage->Start();
-  traffic_light_stage->Start();
-  planner_stage->Start();
-  control_stage->Start();
+  run_traffic_manger.store(true);
+  worker_thread = std::make_unique<std::thread>(&TrafficManagerLocal::Run, this);
+}
 
+void TrafficManagerLocal::Run() {
+  while (run_traffic_manger.load()) {
+    localization_stage->Update();
+    collision_stage->Update();
+    traffic_light_stage->Update();
+    planner_stage->Update();
+    control_stage->Update();
+  }
 }
 
 void TrafficManagerLocal::Stop() {
@@ -113,11 +119,13 @@ void TrafficManagerLocal::Stop() {
   traffic_light_planner_messenger->Stop();
   planner_control_messenger->Stop();
 
-  localization_stage->Stop();
-  collision_stage->Stop();
-  traffic_light_stage->Stop();
-  planner_stage->Stop();
-  control_stage->Stop();
+  run_traffic_manger.store(false);
+  if(worker_thread) {
+    if(worker_thread->joinable()){
+      worker_thread->join();
+    }
+    worker_thread.release();
+  }
 }
 
 void TrafficManagerLocal::Release() {

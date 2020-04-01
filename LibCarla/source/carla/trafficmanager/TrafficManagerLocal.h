@@ -7,6 +7,7 @@
 #pragma once
 
 #include <algorithm>
+#include <atomic>
 #include <memory>
 #include <random>
 #include <unordered_set>
@@ -90,6 +91,12 @@ namespace traffic_manager {
     /// Traffic manager server instance.
     TrafficManagerServer server;
 
+    /// Switch to turn on / turn off traffic manager.
+    std::atomic<bool> run_traffic_manger {true};
+
+    /// Single worker thread for sequential execution of sub-components.
+    std::unique_ptr<std::thread> worker_thread;
+
     /// Method to check if all traffic lights are frozen in a group.
     bool CheckAllFrozen(TLGroup tl_to_freeze);
 
@@ -110,6 +117,9 @@ namespace traffic_manager {
 
     /// To start the TrafficManager.
     void Start();
+
+    /// Initiates thread to run the TrafficManager sequentially.
+    void Run();
 
     /// To stop the TrafficManager.
     void Stop();
