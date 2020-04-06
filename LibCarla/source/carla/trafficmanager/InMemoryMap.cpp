@@ -33,7 +33,8 @@ namespace MapConstants {
   }
 
   std::vector<SimpleWaypointPtr> InMemoryMap::GetSuccessors(const SegmentId segment_id,
-  const SegmentTopology &segment_topology, const SegmentMap &segment_map) {
+                                                            const SegmentTopology &segment_topology,
+                                                            const SegmentMap &segment_map) const {
     std::vector<SimpleWaypointPtr> result;
     if (segment_topology.find(segment_id) == segment_topology.end()) {
       return result;
@@ -51,7 +52,8 @@ namespace MapConstants {
   }
 
   std::vector<SimpleWaypointPtr> InMemoryMap::GetPredecessors(const SegmentId segment_id,
-  const SegmentTopology &segment_topology, const SegmentMap &segment_map) {
+                                                              const SegmentTopology &segment_topology,
+                                                              const SegmentMap &segment_map) const {
     std::vector<SimpleWaypointPtr> result;
     if (segment_topology.find(segment_id) == segment_topology.end()) {
       return result;
@@ -234,7 +236,7 @@ namespace MapConstants {
     MakeGeodesiGridCenters();
   }
 
-  std::pair<int, int> InMemoryMap::MakeGridId(float x, float y, bool vehicle_or_pedestrian) {
+  std::pair<int, int> InMemoryMap::MakeGridId(float x, float y, bool vehicle_or_pedestrian) const {
     if (vehicle_or_pedestrian) {
       return {static_cast<int>(std::floor(x / GRID_SIZE)), static_cast<int>(std::floor(y / GRID_SIZE))};
     } else {
@@ -243,11 +245,11 @@ namespace MapConstants {
     }
   }
 
-  std::string InMemoryMap::MakeGridKey(std::pair<int, int> grid_key) {
+  std::string InMemoryMap::MakeGridKey(std::pair<int, int> grid_key) const {
     return std::to_string(grid_key.first) + "#" + std::to_string(grid_key.second);
   }
 
-  SimpleWaypointPtr InMemoryMap::GetWaypointInVicinity(cg::Location location) {
+  SimpleWaypointPtr InMemoryMap::GetWaypointInVicinity(cg::Location location) const {
 
     const std::pair<int, int> grid_ids = MakeGridId(location.x, location.y, true);
     SimpleWaypointPtr closest_waypoint = nullptr;
@@ -285,7 +287,7 @@ namespace MapConstants {
     return closest_waypoint;
   }
 
-  SimpleWaypointPtr InMemoryMap::GetPedWaypoint(cg::Location location) {
+  SimpleWaypointPtr InMemoryMap::GetPedWaypoint(cg::Location location) const {
 
     const std::pair<int, int> grid_ids = MakeGridId(location.x, location.y, false);
     SimpleWaypointPtr closest_waypoint = nullptr;
@@ -429,7 +431,7 @@ namespace MapConstants {
     }
   }
 
-  cg::Location InMemoryMap::GetGeodesicGridCenter(GeoGridId ggid) {
+  cg::Location InMemoryMap::GetGeodesicGridCenter(GeoGridId ggid) const {
     cg::Location grid_center;
     if (geodesic_grid_center.find(ggid) != geodesic_grid_center.end()) {
       grid_center = geodesic_grid_center.at(ggid);

@@ -16,14 +16,11 @@ namespace LocalizationConstants {
 
   using namespace LocalizationConstants;
 
-  float DeviationCrossProduct(Actor actor, const cg::Location &vehicle_location, const cg::Location &target_location) {
+  float DeviationCrossProduct(const cg::Location &vehicle_location,
+                              const cg::Vector3D &heading_vector,
+                              const cg::Location &target_location) {
 
-    cg::Vector3D heading_vector = actor->GetTransform().GetForwardVector();
-    heading_vector.z = 0.0f;
-    heading_vector = heading_vector.MakeUnitVector();
     cg::Location next_vector = target_location - vehicle_location;
-    next_vector.z = 0.0f;
-
     if (next_vector.Length() > 2.0f * std::numeric_limits<float>::epsilon()) {
       next_vector = next_vector.MakeUnitVector();
       const float cross_z = heading_vector.x * next_vector.y - heading_vector.y * next_vector.x;
@@ -33,24 +30,12 @@ namespace LocalizationConstants {
     }
   }
 
-  float DeviationDotProduct(Actor actor, const cg::Location &vehicle_location, const cg::Location &target_location, bool rear_offset) {
+  float DeviationDotProduct(const cg::Location &vehicle_location,
+                            const cg::Vector3D &heading_vector,
+                            const cg::Location &target_location) {
 
-    cg::Vector3D heading_vector = actor->GetTransform().GetForwardVector();
-    heading_vector.z = 0.0f;
-    heading_vector = heading_vector.MakeUnitVector();
-    cg::Location next_vector;
-
-    if (!rear_offset) {
-      next_vector = target_location - vehicle_location;
-    } else {
-      const auto vehicle_ptr = boost::static_pointer_cast<cc::Vehicle>(actor);
-      const float vehicle_half_length = vehicle_ptr->GetBoundingBox().extent.x;
-      next_vector = target_location - (cg::Location(-1* vehicle_half_length * heading_vector)
-                                        + vehicle_location);
-    }
-
+    cg::Location next_vector = target_location - vehicle_location;
     next_vector.z = 0.0f;
-
     if (next_vector.Length() > 2.0f * std::numeric_limits<float>::epsilon()) {
       next_vector = next_vector.MakeUnitVector();
       const float dot_product = cg::Math::Dot(next_vector, heading_vector);
@@ -58,6 +43,27 @@ namespace LocalizationConstants {
     } else {
       return 0.0f;
     }
+  }
+
+  void PushWaypoint(ActorId actor_id, TrackTraffic& track_traffic,
+                    Buffer& buffer, SimpleWaypointPtr& waypoint) {
+
+    const uint64_t waypoint_id = waypoint->GetId();
+    buffer.push_back(waypoint);
+    track_traffic.UpdatePassingVehicle(waypoint_id, actor_id);
+  }
+
+  void PopWaypoint(ActorId actor_id, TrackTraffic& track_traffic,
+                   Buffer& buffer, bool front_or_back) {
+
+    SimpleWaypointPtr removed_waypoint = front_or_back? buffer.front(): buffer.back();
+    const uint64_t removed_waypoint_id = removed_waypoint->GetId();
+    if (front_or_back) {
+      buffer.pop_front();
+    } else {
+      buffer.pop_back();
+    }
+    track_traffic.RemovePassingVehicle(removed_waypoint_id, actor_id);
   }
 
   TrackTraffic::TrackTraffic() {}
@@ -272,6 +278,12 @@ std::pair<SimpleWaypointPtr,uint64_t> TrackTraffic::GetTargetWaypoint(const Buff
       index = waypoint_buffer.size() - 1;
     }
   return std::make_pair(target_waypoint, index);
+  }
+
+  void TrackTraffic::Clear() {
+    waypoint_overlap_tracker.clear();
+    actor_to_grids.clear();
+    grid_to_actors.clear();
   }
 
 } // namespace traffic_manager

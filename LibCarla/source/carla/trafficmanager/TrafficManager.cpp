@@ -4,11 +4,7 @@
 // This work is licensed under the terms of the MIT license.
 // For a copy, see <https://opensource.org/licenses/MIT>.
 
-#include "carla/client/Client.h"
-#include "carla/client/World.h"
 #include "carla/trafficmanager/TrafficManager.h"
-#include "carla/trafficmanager/TrafficManagerBase.h"
-#include "carla/Exception.h"
 
 #define DEBUG_PRINT_TM  0
 

@@ -81,31 +81,34 @@ namespace crd = carla::road;
     SimpleWaypointPtr GetWaypoint(const cg::Location &location) const;
 
     /// This method returns closest waypoint in the vicinity of the given co-ordinates.
-    SimpleWaypointPtr GetWaypointInVicinity(cg::Location location);
-    SimpleWaypointPtr GetPedWaypoint(cg::Location location);
+    SimpleWaypointPtr GetWaypointInVicinity(cg::Location location) const;
+    SimpleWaypointPtr GetPedWaypoint(cg::Location location) const;
 
     /// This method returns the full list of discrete samples of the map in the
     /// local cache.
     NodeList GetDenseTopology() const;
 
     void MakeGeodesiGridCenters();
-    cg::Location GetGeodesicGridCenter(GeoGridId ggid);
+    cg::Location GetGeodesicGridCenter(GeoGridId ggid) const;
 
   private:
 
     /// Method to generate the grid ids for given co-ordinates.
-    std::pair<int, int> MakeGridId(float x, float y, bool vehicle_or_pedestrian);
+    std::pair<int, int> MakeGridId(float x, float y, bool vehicle_or_pedestrian) const;
 
     /// Method to generate map key for waypoint_grid.
-    std::string MakeGridKey(std::pair<int, int> gird_id);
+    std::string MakeGridKey(std::pair<int, int> gird_id) const;
 
     /// This method is used to find and place lane change links.
     void FindAndLinkLaneChange(SimpleWaypointPtr reference_waypoint);
 
     std::vector<SimpleWaypointPtr> GetSuccessors(const SegmentId segment_id,
-    const SegmentTopology &segment_topology, const SegmentMap &segment_map);
+                                                 const SegmentTopology &segment_topology,
+                                                 const SegmentMap &segment_map) const;
+
     std::vector<SimpleWaypointPtr> GetPredecessors(const SegmentId segment_id,
-    const SegmentTopology &segment_topology, const SegmentMap &segment_map);
+                                                   const SegmentTopology &segment_topology,
+                                                   const SegmentMap &segment_map) const;
   };
 
 } // namespace traffic_manager

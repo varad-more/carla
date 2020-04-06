@@ -9,12 +9,14 @@
 #include "carla/client/detail/Simulator.h"
 #include "carla/client/World.h"
 #include "carla/PythonUtil.h"
+#include "carla/trafficmanager/Constants.h"
 #include "carla/trafficmanager/TrafficManager.h"
 
 namespace carla {
 namespace client {
 
   using namespace carla::traffic_manager;
+  using constants::Networking::TM_DEFAULT_PORT;
 
   class Client {
   public:

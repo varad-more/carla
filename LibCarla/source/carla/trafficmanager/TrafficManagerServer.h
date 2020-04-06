@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <vector>
 #include <memory>
 
@@ -13,10 +14,14 @@
 #include "carla/client/Actor.h"
 #include "carla/Version.h"
 #include "carla/rpc/Server.h"
+#include "carla/trafficmanager/Constants.h"
 #include "carla/trafficmanager/TrafficManagerBase.h"
 
 namespace carla {
 namespace traffic_manager {
+
+using namespace std::chrono_literals;
+using namespace constants::Networking;
 
 using ActorPtr = carla::SharedPtr<carla::client::Actor>;
 

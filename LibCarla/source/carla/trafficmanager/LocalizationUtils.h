@@ -34,8 +34,6 @@ namespace traffic_manager {
     /// Structure to keep track of overlapping waypoints between vehicles.
     using WaypointOverlap = std::unordered_map<uint64_t, ActorIdSet>;
     WaypointOverlap waypoint_overlap_tracker;
-    /// Stored vehicle id set record.
-    ActorIdSet actor_id_set_record;
     /// Geodesic grids occupied by actors's paths.
     std::unordered_map<ActorId, std::unordered_set<GeoGridId>> actor_to_grids;
     /// Actors currently passing through grids.
@@ -61,15 +59,27 @@ namespace traffic_manager {
     std::unordered_set<GeoGridId> GetGridIds(ActorId actor_id);
 
     std::unordered_map<GeoGridId, ActorIdSet> GetGridActors();
+
+    void Clear();
   };
 
   /// Returns the cross product (z component value) between the vehicle's
   /// heading vector and the vector along the direction to the next
   /// target waypoint on the horizon.
-  float DeviationCrossProduct(Actor actor, const cg::Location &vehicle_location, const cg::Location &target_location);
+  float DeviationCrossProduct(const cg::Location &vehicle_location,
+                              const cg::Vector3D &heading_vector,
+                              const cg::Location &target_location);
   /// Returns the dot product between the vehicle's heading vector and
   /// the vector along the direction to the next target waypoint on the horizon.
-  float DeviationDotProduct(Actor actor, const cg::Location &vehicle_location, const cg::Location &target_location, bool rear_offset=false);
+  float DeviationDotProduct(const cg::Location &vehicle_location,
+                            const cg::Vector3D &heading_vector,
+                            const cg::Location &target_location);
+
+  void PushWaypoint(ActorId actor_id, TrackTraffic& track_traffic,
+                    Buffer& buffer, SimpleWaypointPtr& waypoint);
+
+  void PopWaypoint(ActorId actor_id, TrackTraffic& track_traffic,
+                   Buffer& buffer, bool front_or_back=true);
 
 } // namespace traffic_manager
 } // namespace carla

@@ -16,24 +16,15 @@
 #include "carla/client/Actor.h"
 #include "carla/client/BlueprintLibrary.h"
 #include "carla/client/Map.h"
-#include "carla/client/World.h"
 #include "carla/client/TimeoutException.h"
-
+#include "carla/client/World.h"
+#include "carla/Exception.h"
 #include "carla/geom/Transform.h"
 #include "carla/Logging.h"
 #include "carla/Memory.h"
 #include "carla/Sockets.h"
 
-#include "carla/trafficmanager/AtomicActorSet.h"
-#include "carla/trafficmanager/AtomicMap.h"
-#include "carla/trafficmanager/BatchControlStage.h"
-#include "carla/trafficmanager/CollisionStage.h"
-#include "carla/trafficmanager/InMemoryMap.h"
-#include "carla/trafficmanager/LocalizationStage.h"
-#include "carla/trafficmanager/MotionPlannerStage.h"
-#include "carla/trafficmanager/Parameters.h"
-#include "carla/trafficmanager/TrafficLightStage.h"
-
+#include "carla/trafficmanager/Constants.h"
 #include "carla/trafficmanager/TrafficManagerBase.h"
 #include "carla/trafficmanager/TrafficManagerLocal.h"
 #include "carla/trafficmanager/TrafficManagerRemote.h"
@@ -43,6 +34,8 @@
 
 namespace carla {
 namespace traffic_manager {
+
+using namespace constants::Networking;
 
 using ActorPtr = carla::SharedPtr<carla::client::Actor>;
 

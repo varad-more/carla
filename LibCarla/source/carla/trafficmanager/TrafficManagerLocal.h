@@ -7,187 +7,233 @@
 #pragma once
 
 #include <algorithm>
+#include <atomic>
+#include <chrono>
 #include <memory>
 #include <random>
 #include <unordered_set>
 #include <vector>
 
-#include "carla/StringUtil.h"
+#include "carla/client/Actor.h"
+#include "carla/client/ActorList.h"
+#include "carla/client/BlueprintLibrary.h"
+#include "carla/client/Client.h"
+#include "carla/client/DebugHelper.h"
+#include "carla/client/detail/EpisodeProxy.h"
+#include "carla/client/detail/Simulator.h"
+#include "carla/client/Map.h"
+#include "carla/client/TrafficLight.h"
+#include "carla/client/World.h"
 #include "carla/geom/Transform.h"
 #include "carla/Logging.h"
 #include "carla/Memory.h"
+#include "carla/rpc/Command.h"
 
-#include "carla/client/Actor.h"
-#include "carla/client/BlueprintLibrary.h"
-#include "carla/client/Map.h"
-#include "carla/client/World.h"
-
-#include "carla/client/detail/Simulator.h"
-#include "carla/client/detail/EpisodeProxy.h"
-
+#include "carla/trafficmanager/ALSM.h"
 #include "carla/trafficmanager/AtomicActorSet.h"
 #include "carla/trafficmanager/AtomicMap.h"
-#include "carla/trafficmanager/BatchControlStage.h"
-#include "carla/trafficmanager/CollisionStage.h"
+#include "carla/trafficmanager/DataStructures.h"
 #include "carla/trafficmanager/InMemoryMap.h"
-#include "carla/trafficmanager/LocalizationStage.h"
-#include "carla/trafficmanager/MotionPlannerStage.h"
 #include "carla/trafficmanager/Parameters.h"
-#include "carla/trafficmanager/TrafficLightStage.h"
-
+#include "carla/trafficmanager/Localization.h"
+#include "carla/trafficmanager/LocalizationUtils.h"
 #include "carla/trafficmanager/TrafficManagerBase.h"
 #include "carla/trafficmanager/TrafficManagerServer.h"
 
-namespace carla {
-namespace traffic_manager {
+namespace carla
+{
+namespace traffic_manager
+{
 
-  using ActorPtr = carla::SharedPtr<carla::client::Actor>;
-  using TLS = carla::rpc::TrafficLightState;
-  using TLGroup = std::vector<carla::SharedPtr<carla::client::TrafficLight>>;
+namespace chr = std::chrono;
 
-  /// The function of this class is to integrate all the various stages of
-  /// the traffic manager appropriately using messengers.
-  class TrafficManagerLocal : public TrafficManagerBase {
+using namespace std::chrono_literals;
 
-  private:
+using TimePoint = chr::time_point<chr::system_clock, chr::nanoseconds>;
+using TLS = carla::rpc::TrafficLightState;
+using TLGroup = std::vector<carla::SharedPtr<carla::client::TrafficLight>>;
+using CollisionFrame = std::vector<CollisionHazardData>;
+using CollisionFramePtr = std::shared_ptr<CollisionFrame>;
+using TLFrame = std::vector<bool>;
+using TLFramePtr = std::shared_ptr<TLFrame>;
+using ControlFrame = std::vector<carla::rpc::Command>;
+using ControlFramePtr = std::shared_ptr<ControlFrame>;
 
-    /// PID controller parameters.
-    std::vector<float> longitudinal_PID_parameters;
-    std::vector<float> longitudinal_highway_PID_parameters;
-    std::vector<float> lateral_PID_parameters;
-    std::vector<float> lateral_highway_PID_parameters;
+/// The function of this class is to integrate all the various stages of
+/// the traffic manager appropriately using messengers.
+class TrafficManagerLocal : public TrafficManagerBase
+{
 
-    /// Set of all actors registered with traffic manager.
-    AtomicActorSet registered_actors;
+private:
+  /// Carla's client connection object.
+  carla::client::detail::EpisodeProxy episode_proxy;
+  /// Carla client and object.
+  cc::World world;
+  /// PID controller parameters.
+  std::vector<float> longitudinal_PID_parameters;
+  std::vector<float> longitudinal_highway_PID_parameters;
+  std::vector<float> lateral_PID_parameters;
+  std::vector<float> lateral_highway_PID_parameters;
+  /// Set of all actors registered with traffic manager.
+  AtomicActorSet registered_vehicles;
+  /// State counter to track changes in registered actors.
+  int registered_vehicles_state;
+  /// List of vehicles registered with the traffic manager in
+  /// current update cycle.
+  std::vector<ActorId> vehicle_id_list;
+  /// A structure used to keep track of actors spawned outside of traffic manager.
+  std::unordered_map<ActorId, ActorPtr> unregistered_actors;
+  /// Pointer to local map cache.
+  LocalMapPtr local_map;
+  /// Structures to hold waypoint buffers for all vehicles.
+  std::shared_ptr<BufferMap> buffer_map;
+  /// Object for tracking paths of the traffic vehicles.
+  TrackTraffic track_traffic;
+  /// Map of all vehicles' idle time.
+  std::unordered_map<ActorId, double> idle_time;
+  /// Simulated seconds since the beginning of the current episode when the last actor was destroyed.
+  double elapsed_last_actor_destruction = 0.0;
+  /// Map to keep track of last lane change location.
+  std::unordered_map<ActorId, cg::Location> last_lane_change_location;
+  /// Reference of hero vehicle.
+  ActorPtr hero_vehicle{nullptr};
+  /// Switch indicating hybrid physics mode.
+  bool hybrid_physics_mode{false};
+  /// Structure to hold kinematic state for all vehicles.
+  KinematicStateMap kinematic_state_map;
+  /// Structure to hold static attributes of vehicles.
+  StaticAttributeMap static_attribute_map;
+  /// Structure to hold traffic light states for all vehicles.
+  TrafficLightStateMap tl_state_map;
+  /// Time instance used to calculate dt in asynchronous mode.
+  TimePoint previous_update_instance;
+  /// Carla's debug helper object.
+  carla::client::DebugHelper debug_helper;
+  /// Parameterization object.
+  Parameters parameters;
+  /// Traffic manager server instance.
+  TrafficManagerServer server;
+  /// Switch to turn on / turn off traffic manager.
+  std::atomic<bool> run_traffic_manger{true};
+  /// Flags to signal step begin and end.
+  std::atomic<bool> step_begin{false};
+  std::atomic<bool> step_end{false};
+  /// Mutex for progressing synchronous execution.
+  std::mutex step_execution_mutex;
+  /// Condition variables for progressing synchronous execution.
+  std::condition_variable step_begin_trigger;
+  std::condition_variable step_end_trigger;
+  std::condition_variable step_complete_trigger;
+  /// Single worker thread for sequential execution of sub-components.
+  std::unique_ptr<std::thread> worker_thread;
+  /// Array to hold output data of collision avoidance.
+  CollisionFramePtr collision_frame_ptr;
+  /// Array to hold output data of traffic light response.
+  TLFramePtr tl_frame_ptr;
+  /// Array to hold output data of motion planning.
+  ControlFramePtr control_frame_ptr;
+  /// Method to check if all traffic lights are frozen in a group.
+  bool CheckAllFrozen(TLGroup tl_to_freeze);
 
-    /// Pointer to local map cache.
-    std::shared_ptr<InMemoryMap> local_map;
+public:
+  /// Private constructor for singleton lifecycle management.
+  TrafficManagerLocal(std::vector<float> longitudinal_PID_parameters,
+                      std::vector<float> longitudinal_highway_PID_parameters,
+                      std::vector<float> lateral_PID_parameters,
+                      std::vector<float> lateral_highway_PID_parameters,
+                      float perc_decrease_from_limit,
+                      cc::detail::EpisodeProxy &episode_proxy,
+                      uint16_t &RPCportTM);
 
-    /// Carla's client connection object.
-    carla::client::detail::EpisodeProxy episodeProxyTM;
+  /// Destructor.
+  virtual ~TrafficManagerLocal();
 
-    /// Carla's debug helper object.
-    carla::client::DebugHelper debug_helper;
+  /// Method to setup InMemoryMap.
+  void SetupLocalMap();
 
-    /// Pointers to messenger objects connecting stage pairs.
-    std::shared_ptr<CollisionToPlannerMessenger> collision_planner_messenger;
-    std::shared_ptr<LocalizationToCollisionMessenger> localization_collision_messenger;
-    std::shared_ptr<LocalizationToTrafficLightMessenger> localization_traffic_light_messenger;
-    std::shared_ptr<LocalizationToPlannerMessenger> localization_planner_messenger;
-    std::shared_ptr<PlannerToControlMessenger> planner_control_messenger;
-    std::shared_ptr<TrafficLightToPlannerMessenger> traffic_light_planner_messenger;
+  /// To start the TrafficManager.
+  void Start();
 
-    /// Pointers to the stage objects of traffic manager.
-    std::unique_ptr<CollisionStage> collision_stage;
-    std::unique_ptr<BatchControlStage> control_stage;
-    std::unique_ptr<LocalizationStage> localization_stage;
-    std::unique_ptr<MotionPlannerStage> planner_stage;
-    std::unique_ptr<TrafficLightStage> traffic_light_stage;
+  /// Initiates thread to run the TrafficManager sequentially.
+  void Run();
 
-    /// Parameterization object.
-    Parameters parameters;
+  /// To stop the TrafficManager.
+  void Stop();
 
-    /// Traffic manager server instance.
-    TrafficManagerServer server;
+  /// To release the traffic manager.
+  void Release();
 
-    /// Method to check if all traffic lights are frozen in a group.
-    bool CheckAllFrozen(TLGroup tl_to_freeze);
+  /// To reset the traffic manager.
+  void Reset();
 
-  public:
+  /// This method registers a vehicle with the traffic manager.
+  void RegisterVehicles(const std::vector<ActorPtr> &actor_list);
 
-    /// Private constructor for singleton lifecycle management.
-    TrafficManagerLocal(
-      std::vector<float> longitudinal_PID_parameters,
-      std::vector<float> longitudinal_highway_PID_parameters,
-      std::vector<float> lateral_PID_parameters,
-      std::vector<float> lateral_highway_PID_parameters,
-      float perc_decrease_from_limit,
-      carla::client::detail::EpisodeProxy &episodeProxy,
-      uint16_t &RPCportTM);
-
-    /// Destructor.
-    virtual ~TrafficManagerLocal();
-
-    /// To start the TrafficManager.
-    void Start();
-
-    /// To stop the TrafficManager.
-    void Stop();
-
-    /// To release the traffic manager.
-    void Release();
-
-    /// To reset the traffic manager.
-    void Reset();
-
-    /// This method registers a vehicle with the traffic manager.
-    void RegisterVehicles(const std::vector<ActorPtr> &actor_list);
-
-    /// This method unregisters a vehicle from traffic manager.
+  /// This method unregisters a vehicle from traffic manager.
     void UnregisterVehicles(const std::vector<ActorPtr> &actor_list);
 
-    /// Method to set a vehicle's % decrease in velocity with respect to the speed limit.
-    /// If less than 0, it's a % increase.
-    void SetPercentageSpeedDifference(const ActorPtr &actor, const float percentage);
+  /// Method to set a vehicle's % decrease in velocity with respect to the speed limit.
+  /// If less than 0, it's a % increase.
+  void SetPercentageSpeedDifference(const ActorPtr &actor, const float percentage);
 
-    /// Methos to set a global % decrease in velocity with respect to the speed limit.
-    /// If less than 0, it's a % increase.
-    void SetGlobalPercentageSpeedDifference(float const percentage);
+  /// Methos to set a global % decrease in velocity with respect to the speed limit.
+  /// If less than 0, it's a % increase.
+  void SetGlobalPercentageSpeedDifference(float const percentage);
 
-    /// Method to set collision detection rules between vehicles.
-    void SetCollisionDetection(const ActorPtr &reference_actor, const ActorPtr &other_actor, const bool detect_collision);
+  /// Method to set collision detection rules between vehicles.
+  void SetCollisionDetection(const ActorPtr &reference_actor, const ActorPtr &other_actor, const bool detect_collision);
 
-    /// Method to force lane change on a vehicle.
-    /// Direction flag can be set to true for left and false for right.
-    void SetForceLaneChange(const ActorPtr &actor, const bool direction);
+  /// Method to force lane change on a vehicle.
+  /// Direction flag can be set to true for left and false for right.
+  void SetForceLaneChange(const ActorPtr &actor, const bool direction);
 
-    /// Enable/disable automatic lane change on a vehicle.
-    void SetAutoLaneChange(const ActorPtr &actor, const bool enable);
+  /// Enable/disable automatic lane change on a vehicle.
+  void SetAutoLaneChange(const ActorPtr &actor, const bool enable);
 
-    /// Method to specify how much distance a vehicle should maintain to
-    /// the leading vehicle.
-    void SetDistanceToLeadingVehicle(const ActorPtr &actor, const float distance);
+  /// Method to specify how much distance a vehicle should maintain to
+  /// the leading vehicle.
+  void SetDistanceToLeadingVehicle(const ActorPtr &actor, const float distance);
 
-    /// Method to specify the % chance of ignoring collisions with any walker.
-    void SetPercentageIgnoreWalkers(const ActorPtr &actor, const float perc);
+  /// Method to specify the % chance of ignoring collisions with any walker.
+  void SetPercentageIgnoreWalkers(const ActorPtr &actor, const float perc);
 
-    /// Method to specify the % chance of ignoring collisions with any vehicle.
-    void SetPercentageIgnoreVehicles(const ActorPtr &actor, const float perc);
+  /// Method to specify the % chance of ignoring collisions with any vehicle.
+  void SetPercentageIgnoreVehicles(const ActorPtr &actor, const float perc);
 
-    /// Method to specify the % chance of running any traffic light.
-    void SetPercentageRunningLight(const ActorPtr &actor, const float perc);
+  /// Method to specify the % chance of running any traffic light.
+  void SetPercentageRunningLight(const ActorPtr &actor, const float perc);
 
-    /// Method to specify the % chance of running any traffic sign.
-    void SetPercentageRunningSign(const ActorPtr &actor, const float perc);
+  /// Method to specify the % chance of running any traffic sign.
+  void SetPercentageRunningSign(const ActorPtr &actor, const float perc);
 
-    /// Method to switch traffic manager into synchronous execution.
-    void SetSynchronousMode(bool mode);
+  /// Method to switch traffic manager into synchronous execution.
+  void SetSynchronousMode(bool mode);
 
-    /// Method to set Tick timeout for synchronous execution.
-    void SetSynchronousModeTimeOutInMiliSecond(double time);
+  /// Method to set Tick timeout for synchronous execution.
+  void SetSynchronousModeTimeOutInMiliSecond(double time);
 
-    /// Method to provide synchronous tick.
-    bool SynchronousTick();
+  /// Method to provide synchronous tick.
+  bool SynchronousTick();
 
-    /// Method to reset all traffic light groups to the initial stage.
-    void ResetAllTrafficLights();
+  /// Method to reset all traffic light groups to the initial stage.
+  void ResetAllTrafficLights();
 
-    /// Get CARLA episode information.
-    carla::client::detail::EpisodeProxy& GetEpisodeProxy();
+  /// Get CARLA episode information.
+  carla::client::detail::EpisodeProxy &GetEpisodeProxy();
 
-    /// Get list of all registered vehicles.
-    std::vector<ActorId> GetRegisteredVehiclesIDs();
+  /// Get list of all registered vehicles.
+  std::vector<ActorId> GetRegisteredVehiclesIDs();
 
-    /// Method to specify how much distance a vehicle should maintain to
-    /// the Global leading vehicle.
-    void SetGlobalDistanceToLeadingVehicle(const float distance);
+  /// Method to specify how much distance a vehicle should maintain to
+  /// the Global leading vehicle.
+  void SetGlobalDistanceToLeadingVehicle(const float distance);
 
-    /// Method to set probabilistic preference to keep on the right lane.
-    void SetKeepRightPercentage(const ActorPtr &actor, const float percentage);
+  /// Method to set probabilistic preference to keep on the right lane.
+  void SetKeepRightPercentage(const ActorPtr &actor, const float percentage);
 
-    /// Method to set hybrid physics mode.
-    void SetHybridPhysicsMode(const bool mode_switch);
-  };
+  /// Method to set hybrid physics mode.
+  void SetHybridPhysicsMode(const bool mode_switch);
+};
 
 } // namespace traffic_manager
 } // namespace carla
