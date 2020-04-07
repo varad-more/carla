@@ -6,8 +6,6 @@
 
 #include "carla/trafficmanager/PIDController.h"
 
-#include <algorithm>
-
 #define CLAMP(__v, __hi, __lo) (__v > __hi? __hi : (__v < __lo? __lo: __v))
 
 namespace carla {

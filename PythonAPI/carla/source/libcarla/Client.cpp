@@ -9,9 +9,10 @@
 #include "carla/client/World.h"
 #include "carla/Logging.h"
 #include "carla/rpc/ActorId.h"
-#include "carla/trafficmanager/TrafficManager.h"
 
 #include <boost/python/stl_iterator.hpp>
+
+using carla::traffic_manager::constants::Networking::TM_DEFAULT_PORT;
 
 static void SetTimeout(carla::client::Client &client, double seconds) {
   client.SetTimeout(TimeDurationFromSeconds(seconds));

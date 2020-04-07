@@ -6,6 +6,9 @@
 
 #include "carla/trafficmanager/TrafficManagerLocal.h"
 
+#include "carla/trafficmanager/ALSM.h"
+#include "carla/trafficmanager/Localization.h"
+
 namespace carla {
 namespace traffic_manager {
 
@@ -67,7 +70,7 @@ void TrafficManagerLocal::Run() {
     if (sync_mode) {
       std::unique_lock<std::mutex> lock(step_execution_mutex);
       while (!step_begin.load()) {
-        step_begin_trigger.wait_for(lock, 1ms, [this]() {return step_begin.load();});
+        step_begin_trigger.wait(lock, [this]() {return step_begin.load();});
       }
       step_begin.store(false);
     }
@@ -131,11 +134,17 @@ void TrafficManagerLocal::Run() {
                    last_lane_change_location);
     }
 
+    ///////////////////////////////////// DEBUG //////////////////////////////////////
+    for (auto& state_pair: kinematic_state_map) {
+      debug_helper.DrawString(state_pair.second.location, "TRACKING", false, {255u, 255u, 0u}, 0.05f);
+    }
+    //////////////////////////////////////////////////////////////////////////////////
+
     // Wait for external trigger to complete cycle in synchronous mode.
     if (sync_mode) {
       std::unique_lock<std::mutex> lock(step_execution_mutex);
       while (!step_end.load()) {
-        step_end_trigger.wait_for(lock, 1ms, [this]() {return step_end.load();});
+        step_end_trigger.wait(lock, [this]() {return step_end.load();});
       }
       // Set flag to false, unblock RunStep() call and release mutex lock.
       step_end.store(false);

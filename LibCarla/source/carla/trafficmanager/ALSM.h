@@ -11,7 +11,6 @@
 
 #include "carla/client/Actor.h"
 #include "carla/client/ActorList.h"
-#include "carla/client/Client.h"
 #include "carla/client/Timestamp.h"
 #include "carla/client/Vehicle.h"
 #include "carla/client/Walker.h"
@@ -161,8 +160,8 @@ void AgentLifecycleAndStateManagement(AtomicActorSet &registered_vehicles,
   for (auto iter = world_vehicles->begin(); iter != world_vehicles->end(); ++iter)
   {
     // Building set containing current world vehicle ids.
-    world_vehicle_ids.insert((*iter)->GetId());
     const auto unregistered_id = (*iter)->GetId();
+    world_vehicle_ids.insert(unregistered_id);
     if (!registered_vehicles.Contains(unregistered_id)
         && unregistered_actors.find(unregistered_id) == unregistered_actors.end())
     {
@@ -174,8 +173,8 @@ void AgentLifecycleAndStateManagement(AtomicActorSet &registered_vehicles,
   for (auto iter = world_pedestrians->begin(); iter != world_pedestrians->end(); ++iter)
   {
     // Building set containing current world pedestrian ids.
-    world_pedestrian_ids.insert((*iter)->GetId());
     const auto unregistered_id = (*iter)->GetId();
+    world_pedestrian_ids.insert(unregistered_id);
     if (unregistered_actors.find(unregistered_id) == unregistered_actors.end())
     {
       unregistered_actors.insert({unregistered_id, *iter});
@@ -189,12 +188,14 @@ void AgentLifecycleAndStateManagement(AtomicActorSet &registered_vehicles,
     for (auto iter = unregistered_actors.begin(); iter != unregistered_actors.end(); ++iter)
     {
       ActorPtr actor_ptr = iter->second;
-      for (auto &&attribute : actor_ptr->GetAttributes())
-      {
-        if (attribute.GetId() == "role_name" && attribute.GetValue() == "hero")
+      if (actor_ptr->GetTypeId().front() == 'v') {
+        for (auto &&attribute : actor_ptr->GetAttributes())
         {
-          hero_vehicle = actor_ptr;
-          break;
+          if (attribute.GetId() == "role_name" && attribute.GetValue() == "hero")
+          {
+            hero_vehicle = actor_ptr;
+            break;
+          }
         }
       }
     }
@@ -227,8 +228,7 @@ void AgentLifecycleAndStateManagement(AtomicActorSet &registered_vehicles,
     }
   }
 
-  // Building a list of registered actors and connecting
-  // the vehicle ids to their position indices on data arrays.
+  // Building a list of registered actors.
   if (vehicles_unregistered || (registered_vehicles_state != registered_vehicles.GetState()))
   {
     vehicle_id_list.clear();
@@ -239,7 +239,10 @@ void AgentLifecycleAndStateManagement(AtomicActorSet &registered_vehicles,
   // Regularly update unregistered actor states and clean up any invalid actors.
   for (auto iter = unregistered_actors.begin(); iter != unregistered_actors.cend(); ++iter)
   {
-    if (registered_vehicles.Contains(iter->first) || world_vehicle_ids.find(iter->first) == world_vehicle_ids.end())
+    ActorId unregistered_actor_id = iter->first;
+    if (registered_vehicles.Contains(unregistered_actor_id)
+        || (world_vehicle_ids.find(unregistered_actor_id) == world_vehicle_ids.end()
+            && world_pedestrian_ids.find(unregistered_actor_id) == world_pedestrian_ids.end()))
     {
       unregistered_list_to_be_deleted.push_back(iter->first);
     }

@@ -8,6 +8,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <random>
 
 #include "carla/client/Actor.h"
 #include "carla/client/Vehicle.h"

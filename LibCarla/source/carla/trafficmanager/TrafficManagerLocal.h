@@ -17,7 +17,6 @@
 #include "carla/client/Actor.h"
 #include "carla/client/ActorList.h"
 #include "carla/client/BlueprintLibrary.h"
-#include "carla/client/Client.h"
 #include "carla/client/DebugHelper.h"
 #include "carla/client/detail/EpisodeProxy.h"
 #include "carla/client/detail/Simulator.h"
@@ -29,16 +28,16 @@
 #include "carla/Memory.h"
 #include "carla/rpc/Command.h"
 
-#include "carla/trafficmanager/ALSM.h"
 #include "carla/trafficmanager/AtomicActorSet.h"
 #include "carla/trafficmanager/AtomicMap.h"
 #include "carla/trafficmanager/DataStructures.h"
 #include "carla/trafficmanager/InMemoryMap.h"
 #include "carla/trafficmanager/Parameters.h"
-#include "carla/trafficmanager/Localization.h"
 #include "carla/trafficmanager/LocalizationUtils.h"
 #include "carla/trafficmanager/TrafficManagerBase.h"
 #include "carla/trafficmanager/TrafficManagerServer.h"
+#include "carla/trafficmanager/SimpleWaypoint.h"
+
 
 namespace carla
 {
@@ -49,15 +48,26 @@ namespace chr = std::chrono;
 
 using namespace std::chrono_literals;
 
+using ActorId = carla::ActorId;
+using ActorPtr = carla::SharedPtr<cc::Actor>;
+using Buffer = std::deque<std::shared_ptr<SimpleWaypoint>>;
+using BufferMap = std::unordered_map<carla::ActorId, Buffer>;
+using BufferMapPtr = std::shared_ptr<BufferMap>;
+using CollisionFrame = std::vector<CollisionHazardData>;
+using CollisionFramePtr = std::shared_ptr<CollisionFrame>;
+using ControlFrame = std::vector<carla::rpc::Command>;
+using ControlFramePtr = std::shared_ptr<ControlFrame>;
+using KinematicStateMap = std::unordered_map<ActorId, KinematicState>;
+using StaticAttributeMap = std::unordered_map<ActorId, StaticAttributes>;
 using TimePoint = chr::time_point<chr::system_clock, chr::nanoseconds>;
 using TLS = carla::rpc::TrafficLightState;
 using TLGroup = std::vector<carla::SharedPtr<carla::client::TrafficLight>>;
-using CollisionFrame = std::vector<CollisionHazardData>;
-using CollisionFramePtr = std::shared_ptr<CollisionFrame>;
 using TLFrame = std::vector<bool>;
 using TLFramePtr = std::shared_ptr<TLFrame>;
-using ControlFrame = std::vector<carla::rpc::Command>;
-using ControlFramePtr = std::shared_ptr<ControlFrame>;
+using TrafficLightStateMap = std::unordered_map<ActorId, TrafficLightState>;
+using LaneChangeLocationMap = std::unordered_map<ActorId, cg::Location>;
+using IdleTimeMap = std::unordered_map<ActorId, double>;
+using LocalMapPtr = std::shared_ptr<InMemoryMap>;
 
 /// The function of this class is to integrate all the various stages of
 /// the traffic manager appropriately using messengers.
