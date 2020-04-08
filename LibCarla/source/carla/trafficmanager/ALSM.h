@@ -44,21 +44,12 @@ namespace chr = std::chrono;
 namespace cg = carla::geom;
 namespace cc = carla::client;
 
-using ActorId = carla::ActorId;
-using ActorPtr = carla::SharedPtr<cc::Actor>;
 using ActorMap = std::unordered_map<ActorId, ActorPtr>;
 using ActorList = carla::SharedPtr<cc::ActorList>;
-using Buffer = std::deque<std::shared_ptr<SimpleWaypoint>>;
-using BufferMap = std::unordered_map<carla::ActorId, Buffer>;
-using BufferMapPtr = std::shared_ptr<BufferMap>;
-using KinematicStateMap = std::unordered_map<ActorId, KinematicState>;
-using StaticAttributeMap = std::unordered_map<ActorId, StaticAttributes>;
-using TrafficLightStateMap = std::unordered_map<ActorId, TrafficLightState>;
 using LaneChangeLocationMap = std::unordered_map<ActorId, cg::Location>;
 using IdleTimeMap = std::unordered_map<ActorId, double>;
 using IdToIndexMap = std::unordered_map<ActorId, unsigned long>;
 using LocalMapPtr = std::shared_ptr<InMemoryMap>;
-using TLS = carla::rpc::TrafficLightState;
 
 void UpdateIdleTime(IdleTimeMap& idle_time,
                     std::pair<ActorId, double>& max_idle_time,

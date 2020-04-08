@@ -7,6 +7,7 @@
 #include "carla/trafficmanager/TrafficManagerLocal.h"
 
 #include "carla/trafficmanager/ALSM.h"
+#include "carla/trafficmanager/CollisionAvoidance.h"
 #include "carla/trafficmanager/Localization.h"
 
 namespace carla {
@@ -132,6 +133,20 @@ void TrafficManagerLocal::Run() {
                    local_map,
                    parameters,
                    last_lane_change_location);
+    }
+
+    for (unsigned long index = 0u; index < vehicle_id_list.size(); ++index)
+    {
+      CollisionAvoidance(index,
+                         vehicle_id_list,
+                         kinematic_state_map,
+                         static_attribute_map,
+                         tl_state_map,
+                         buffer_map,
+                         track_traffic,
+                         parameters,
+                         collision_locks,
+                         collision_frame_ptr);
     }
 
     // Wait for external trigger to complete cycle in synchronous mode.

@@ -37,7 +37,6 @@
 #include "carla/trafficmanager/TrackTraffic.h"
 #include "carla/trafficmanager/TrafficManagerBase.h"
 #include "carla/trafficmanager/TrafficManagerServer.h"
-#include "carla/trafficmanager/SimpleWaypoint.h"
 
 
 namespace carla
@@ -49,23 +48,9 @@ namespace chr = std::chrono;
 
 using namespace std::chrono_literals;
 
-using ActorId = carla::ActorId;
-using ActorPtr = carla::SharedPtr<cc::Actor>;
-using Buffer = std::deque<std::shared_ptr<SimpleWaypoint>>;
-using BufferMap = std::unordered_map<carla::ActorId, Buffer>;
-using BufferMapPtr = std::shared_ptr<BufferMap>;
-using CollisionFrame = std::vector<CollisionHazardData>;
-using CollisionFramePtr = std::shared_ptr<CollisionFrame>;
-using ControlFrame = std::vector<carla::rpc::Command>;
-using ControlFramePtr = std::shared_ptr<ControlFrame>;
-using KinematicStateMap = std::unordered_map<ActorId, KinematicState>;
-using StaticAttributeMap = std::unordered_map<ActorId, StaticAttributes>;
 using TimePoint = chr::time_point<chr::system_clock, chr::nanoseconds>;
 using TLS = carla::rpc::TrafficLightState;
 using TLGroup = std::vector<carla::SharedPtr<carla::client::TrafficLight>>;
-using TLFrame = std::vector<bool>;
-using TLFramePtr = std::shared_ptr<TLFrame>;
-using TrafficLightStateMap = std::unordered_map<ActorId, TrafficLightState>;
 using LaneChangeLocationMap = std::unordered_map<ActorId, cg::Location>;
 using IdleTimeMap = std::unordered_map<ActorId, double>;
 using LocalMapPtr = std::shared_ptr<InMemoryMap>;
@@ -143,6 +128,9 @@ private:
   TLFramePtr tl_frame_ptr;
   /// Array to hold output data of motion planning.
   ControlFramePtr control_frame_ptr;
+  /// Structure to keep track of collision locking.
+  CollisionLockMap collision_locks;
+
   /// Method to check if all traffic lights are frozen in a group.
   bool CheckAllFrozen(TLGroup tl_to_freeze);
 

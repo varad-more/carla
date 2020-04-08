@@ -34,14 +34,8 @@ using namespace constants::LaneChange;
 
 namespace cc = carla::client;
 
-using ActorId = carla::rpc::ActorId;
-using KinematicStateMap = std::unordered_map<ActorId, KinematicState>;
-using Buffer = std::deque<std::shared_ptr<SimpleWaypoint>>;
-using BufferMap = std::unordered_map<carla::ActorId, Buffer>;
-using BufferMapPtr = std::shared_ptr<BufferMap>;
 using LocalMapPtr = std::shared_ptr<InMemoryMap>;
 using LaneChangeLocationMap = std::unordered_map<ActorId, cg::Location>;
-using StaticAttributeMap = std::unordered_map<ActorId, StaticAttributes>;
 
 SimpleWaypointPtr AssignLaneChange(const ActorId &actor_id,
                                    const cg::Location &vehicle_location,
@@ -52,11 +46,11 @@ SimpleWaypointPtr AssignLaneChange(const ActorId &actor_id,
 
 // TODO: Return structure of structures to feed C, TL, MP.
 void Localization(const unsigned long index,
-                  std::vector<ActorId> &vehicle_id_list,
+                  const std::vector<ActorId> &vehicle_id_list,
                   BufferMapPtr& buffer_map,
                   const KinematicStateMap& state_map,
                   TrackTraffic& track_traffic,
-                  LocalMapPtr& local_map,
+                  const LocalMapPtr& local_map,
                   Parameters& parameters,
                   LaneChangeLocationMap& last_lane_change_location) {
 
@@ -177,53 +171,6 @@ void Localization(const unsigned long index,
 
   // Updating geodesic grid position for actor.
   track_traffic.UpdateGridPosition(actor_id, waypoint_buffer);
-
-  //////////////////// ----------------------- TO MP -------------------------- ///////////////////////////
-  // WayPoint Binning Changes
-  // Generating output.
-  // const float target_point_distance = std::max(std::ceil(vehicle_speed * TARGET_WAYPOINT_TIME_HORIZON),
-  //     TARGET_WAYPOINT_HORIZON_LENGTH);
-
-  // using TargetWPInfo = std::pair<SimpleWaypointPtr,uint64_t>;
-  // TargetWPInfo target_waypoint_index_pair = track_traffic.GetTargetWaypoint(waypoint_buffer, target_point_distance);
-  // SimpleWaypointPtr &target_waypoint = target_waypoint_index_pair.first;
-  // const cg::Location target_location = target_waypoint->GetLocation();
-  // float dot_product = DeviationDotProduct(vehicle_location, heading_vector, target_location);
-  // float cross_product = DeviationCrossProduct(vehicle_location, heading_vector, target_location);
-  // dot_product = 1.0f - dot_product;
-  // if (cross_product < 0.0f) {
-  //   dot_product *= -1.0f;
-  // }
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  //////////////////// ----------------------- TO CA -------------------------- ///////////////////////////
-  // // Determining possible collision candidates around the ego vehicle.
-  // ActorIdSet overlapping_vehicle_set = track_traffic.GetOverlappingVehicles(actor_id);
-  // std::vector<ActorId> collision_candidate_ids;
-
-  // // Run through vehicles with overlapping paths,
-  // // and filter them based on distance to ego vehicle.
-  // float collision_radius_square = std::pow(MAX_COLLISION_RADIUS, 2);
-  // for (ActorId overlapping_actor_id: overlapping_vehicle_set) {
-
-  //   // If actor is within maximum collision avoidance range.
-  //   cg::Location overlapping_actor_location = GetLocation(state_map, actor_id);
-  //   if (cg::Math::DistanceSquared(overlapping_actor_location, vehicle_location) < collision_radius_square)
-  //   {
-  //     collision_candidate_ids.push_back(overlapping_actor_id);
-  //   }
-  // }
-
-  // // Sorting collision candidates in accending order of distance to current vehicle.
-  // std::sort(collision_candidate_ids.begin(), collision_candidate_ids.end(),
-  //           [&state_map, &vehicle_location] (const ActorId& a_id_1, const ActorId& a_id_2) {
-  //             const cg::Location& e_loc = vehicle_location;
-  //             const cg::Location& loc_1 = GetLocation(state_map, a_id_1);
-  //             const cg::Location& loc_2 = GetLocation(state_map, a_id_2);
-  //             return (cg::Math::DistanceSquared(e_loc, loc_1) < cg::Math::DistanceSquared(e_loc, loc_2));
-  //           });
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 }
 
 SimpleWaypointPtr AssignLaneChange(const ActorId &actor_id,

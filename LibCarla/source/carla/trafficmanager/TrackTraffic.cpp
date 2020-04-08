@@ -107,18 +107,18 @@ void TrackTraffic::UpdateGridPosition(const ActorId actor_id, const Buffer &buff
     }
 }
 
-ActorIdSet TrackTraffic::GetOverlappingVehicles(ActorId actor_id)
+ActorIdSet TrackTraffic::GetOverlappingVehicles(ActorId actor_id) const
 {
     ActorIdSet actor_id_set;
 
     if (actor_to_grids.find(actor_id) != actor_to_grids.end())
     {
-        std::unordered_set<GeoGridId> &grid_ids = actor_to_grids.at(actor_id);
+        const std::unordered_set<GeoGridId> &grid_ids = actor_to_grids.at(actor_id);
         for (auto &grid_id : grid_ids)
         {
             if (grid_to_actors.find(grid_id) != grid_to_actors.end())
             {
-                ActorIdSet &actor_ids = grid_to_actors.at(grid_id);
+                const ActorIdSet &actor_ids = grid_to_actors.at(grid_id);
                 actor_id_set.insert(actor_ids.begin(), actor_ids.end());
             }
         }
@@ -147,7 +147,7 @@ void TrackTraffic::DeleteActor(ActorId actor_id)
     }
 }
 
-std::unordered_set<GeoGridId> TrackTraffic::GetGridIds(ActorId actor_id)
+std::unordered_set<GeoGridId> TrackTraffic::GetGridIds(ActorId actor_id) const
 {
     std::unordered_set<GeoGridId> grid_ids;
 
@@ -159,7 +159,7 @@ std::unordered_set<GeoGridId> TrackTraffic::GetGridIds(ActorId actor_id)
     return grid_ids;
 }
 
-std::unordered_map<GeoGridId, ActorIdSet> TrackTraffic::GetGridActors()
+std::unordered_map<GeoGridId, ActorIdSet> TrackTraffic::GetGridActors() const
 {
     return grid_to_actors;
 }
@@ -197,7 +197,7 @@ void TrackTraffic::RemovePassingVehicle(uint64_t waypoint_id, ActorId actor_id)
     }
 }
 
-ActorIdSet TrackTraffic::GetPassingVehicles(uint64_t waypoint_id)
+ActorIdSet TrackTraffic::GetPassingVehicles(uint64_t waypoint_id) const
 {
 
     if (waypoint_overlap_tracker.find(waypoint_id) != waypoint_overlap_tracker.end())

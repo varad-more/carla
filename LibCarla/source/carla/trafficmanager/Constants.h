@@ -67,7 +67,19 @@ static const float INTER_LANE_CHANGE_DISTANCE = 10.0f;
 
 namespace Collision
 {
+static const float BOUNDARY_EXTENSION_MAXIMUM = 50.0f;
+static const float BOUNDARY_EXTENSION_MINIMUM = 2.0f;
+static const float BOUNDARY_EXTENSION_RATE = RATE(BOUNDARY_EXTENSION_MAXIMUM,
+                                                  BOUNDARY_EXTENSION_MINIMUM,
+                                                  SpeedThreshold::ARBITRARY_MAX_SPEED);
+static const float COS_10_DEGREES = 0.9848f;
+static const float EPSILON_VELOCITY = 0.1f;
+static const float LOCKING_DISTANCE_PADDING = 4.0f;
 static const float MAX_COLLISION_RADIUS = 100.0f;
+static const float MAX_LOCKING_EXTENSION = 10.0f;
+static const float WALKER_TIME_EXTENSION = 1.5f;
+static const float SQUARE_ROOT_OF_TWO = 1.414f;
+static const float VERTICAL_OVERLAP_THRESHOLD = 4.0f;
 } // namespace Collision
 
 namespace FrameMemory
