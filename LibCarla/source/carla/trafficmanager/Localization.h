@@ -17,10 +17,11 @@
 #include "carla/trafficmanager/LocalizationUtils.h"
 #include "carla/trafficmanager/Parameters.h"
 #include "carla/trafficmanager/SimpleWaypoint.h"
+#include "carla/trafficmanager/TrackTraffic.h"
 #include "carla/trafficmanager/VehicleStateAndAttributeQuery.h"
 
-#define MIN(a, b) a > b ? a: b
-#define MAX(a, b) a > b ? a: b
+#define MIN(a, b) a > b ? b : a
+#define MAX(a, b) a > b ? a : b
 #define SQUARE(a) a * a
 
 namespace carla

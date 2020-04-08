@@ -21,6 +21,7 @@
 #include "carla/road/Lane.h"
 #include "carla/road/RoadTypes.h"
 
+#include "carla/trafficmanager/Constants.h"
 #include "carla/trafficmanager/SimpleWaypoint.h"
 
 namespace carla {

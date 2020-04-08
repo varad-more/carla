@@ -34,6 +34,7 @@
 #include "carla/trafficmanager/InMemoryMap.h"
 #include "carla/trafficmanager/Parameters.h"
 #include "carla/trafficmanager/LocalizationUtils.h"
+#include "carla/trafficmanager/TrackTraffic.h"
 #include "carla/trafficmanager/TrafficManagerBase.h"
 #include "carla/trafficmanager/TrafficManagerServer.h"
 #include "carla/trafficmanager/SimpleWaypoint.h"

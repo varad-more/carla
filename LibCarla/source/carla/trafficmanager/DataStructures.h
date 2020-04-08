@@ -30,7 +30,12 @@ struct KinematicState
   cg::Vector3D velocity;
 };
 
-enum ActorType {Vehicle, Pedestrian, Any};
+enum ActorType
+{
+  Vehicle,
+  Pedestrian,
+  Any
+};
 
 struct StaticAttributes
 {
@@ -54,5 +59,5 @@ struct CollisionHazardData
   ActorId hazard_actor_id;
 };
 
-}
+} // namespace traffic_manager
 } // namespace carla

@@ -18,8 +18,8 @@ namespace Networking
 {
 static unsigned int MIN_TRY_COUNT = 20u;
 static uint16_t TM_DEFAULT_PORT = 8000u;
-static unsigned int TM_TIMEOUT  = 2000; // ms
-}
+static unsigned int TM_TIMEOUT = 2000; // ms
+} // namespace Networking
 
 namespace VehicleRemoval
 {
@@ -54,7 +54,7 @@ namespace WaypointSelection
 {
 static const float TARGET_WAYPOINT_TIME_HORIZON = 1.0f;
 static const float TARGET_WAYPOINT_HORIZON_LENGTH = 5.0f;
-static const float MINIMUM_JUNCTION_LOOK_AHEAD = 10.0f;
+static const float JUNCTION_LOOK_AHEAD = 10.0f; // m
 } // namespace WaypointSelection
 
 namespace LaneChange
@@ -76,6 +76,15 @@ static const unsigned int INITIAL_SIZE = 50u;
 static const unsigned int GROWTH_STEP_SIZE = 50u;
 } // namespace FrameMemory
 
-} // namespace constant
+namespace Map
+{
+static const float INFINITE_DISTANCE = std::numeric_limits<float>::max();
+static const float GRID_SIZE = 4.0f;
+static const float PED_GRID_SIZE = 10.0f;
+static const float MAX_GEODESIC_GRID_LENGTH = 20.0f;
+static const float MAP_RESOLUTION = 0.1f;
+} // namespace MapConstants
+
+} // namespace constants
 } // namespace traffic_manager
 } // namespace carla

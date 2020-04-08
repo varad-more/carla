@@ -134,12 +134,6 @@ void TrafficManagerLocal::Run() {
                    last_lane_change_location);
     }
 
-    ///////////////////////////////////// DEBUG //////////////////////////////////////
-    for (auto& state_pair: kinematic_state_map) {
-      debug_helper.DrawString(state_pair.second.location, "TRACKING", false, {255u, 255u, 0u}, 0.05f);
-    }
-    //////////////////////////////////////////////////////////////////////////////////
-
     // Wait for external trigger to complete cycle in synchronous mode.
     if (sync_mode) {
       std::unique_lock<std::mutex> lock(step_execution_mutex);
@@ -211,7 +205,7 @@ bool TrafficManagerLocal::SynchronousTick() {
     step_end_trigger.notify_one();
 
     while (step_end.load()) {
-      step_complete_trigger.wait_for(lock, 1ms, [this]() {return !step_end.load();});
+      step_complete_trigger.wait(lock, [this]() {return !step_end.load();});
     }
   }
 

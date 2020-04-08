@@ -14,7 +14,9 @@
 #include "carla/road/RoadTypes.h"
 #include "carla/rpc/ActorId.h"
 
+#include "carla/trafficmanager/Constants.h"
 #include "carla/trafficmanager/SimpleWaypoint.h"
+#include "carla/trafficmanager/TrackTraffic.h"
 
 namespace carla {
 namespace traffic_manager {
@@ -27,41 +29,6 @@ namespace traffic_manager {
   using SimpleWaypointPtr = std::shared_ptr<SimpleWaypoint>;
   using Buffer = std::deque<SimpleWaypointPtr>;
   using GeoGridId = carla::road::JuncId;
-
-  class TrackTraffic{
-
-  private:
-    /// Structure to keep track of overlapping waypoints between vehicles.
-    using WaypointOverlap = std::unordered_map<uint64_t, ActorIdSet>;
-    WaypointOverlap waypoint_overlap_tracker;
-    /// Geodesic grids occupied by actors's paths.
-    std::unordered_map<ActorId, std::unordered_set<GeoGridId>> actor_to_grids;
-    /// Actors currently passing through grids.
-    std::unordered_map<GeoGridId, ActorIdSet> grid_to_actors;
-
-  public:
-    TrackTraffic();
-
-    /// Methods to update, remove and retrieve vehicles passing through a waypoint.
-    void UpdatePassingVehicle(uint64_t waypoint_id, ActorId actor_id);
-    void RemovePassingVehicle(uint64_t waypoint_id, ActorId actor_id);
-    ActorIdSet GetPassingVehicles(uint64_t waypoint_id);
-
-    void UpdateGridPosition(const ActorId actor_id, const Buffer& buffer);
-    void UpdateUnregisteredGridPosition(const ActorId actor_id, const SimpleWaypointPtr& waypoint);
-    /// Method to return the wayPoints from the waypoint Buffer by using target point distance
-    std::pair<SimpleWaypointPtr,uint64_t> GetTargetWaypoint(const Buffer& waypoint_buffer, const float& target_point_distance);
-
-    ActorIdSet GetOverlappingVehicles(ActorId actor_id);
-    /// Method to delete actor data from tracking.
-    void DeleteActor(ActorId actor_id);
-
-    std::unordered_set<GeoGridId> GetGridIds(ActorId actor_id);
-
-    std::unordered_map<GeoGridId, ActorIdSet> GetGridActors();
-
-    void Clear();
-  };
 
   /// Returns the cross product (z component value) between the vehicle's
   /// heading vector and the vector along the direction to the next
@@ -80,6 +47,10 @@ namespace traffic_manager {
 
   void PopWaypoint(ActorId actor_id, TrackTraffic& track_traffic,
                    Buffer& buffer, bool front_or_back=true);
+
+  /// Method to return the wayPoints from the waypoint Buffer by using target point distance
+  using TargetWPInfo = std::pair<SimpleWaypointPtr,uint64_t>;
+  TargetWPInfo GetTargetWaypoint(const Buffer& waypoint_buffer, const float& target_point_distance);
 
 } // namespace traffic_manager
 } // namespace carla
