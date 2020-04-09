@@ -1,12 +1,14 @@
 
-/// This file contains definitions of data structures used in traffic manager.
+/// This file contains definitions of common data structures used in traffic manager.
 
 #pragma once
 
+#include <chrono>
 #include <deque>
 #include <string>
 #include <vector>
 
+#include "carla/client/Actor.h"
 #include "carla/geom/Location.h"
 #include "carla/geom/Rotation.h"
 #include "carla/geom/Vector3D.h"
@@ -21,17 +23,18 @@ namespace carla
 namespace traffic_manager
 {
 
+namespace chr = std::chrono;
 namespace cc = carla::client;
 namespace cg = carla::geom;
 
 using ActorId = carla::ActorId;
 using ActorPtr = carla::SharedPtr<cc::Actor>;
-
+using JunctionID = carla::road::JuncId;
 using SimpleWaypointPtr = std::shared_ptr<SimpleWaypoint>;
 using Buffer = std::deque<SimpleWaypointPtr>;
 using BufferMap = std::unordered_map<carla::ActorId, Buffer>;
 using BufferMapPtr = std::shared_ptr<BufferMap>;
-
+using TimeInstance = chr::time_point<chr::system_clock, chr::nanoseconds>;
 using TLS = carla::rpc::TrafficLightState;
 
 struct KinematicState

@@ -97,6 +97,11 @@ static const float MAX_GEODESIC_GRID_LENGTH = 20.0f;
 static const float MAP_RESOLUTION = 0.1f;
 } // namespace MapConstants
 
+namespace TrafficLight
+{
+static const unsigned int NO_SIGNAL_PASSTHROUGH_INTERVAL = 5u;
+}
+
 } // namespace constants
 } // namespace traffic_manager
 } // namespace carla

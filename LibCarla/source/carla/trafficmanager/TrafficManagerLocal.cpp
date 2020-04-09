@@ -9,6 +9,7 @@
 #include "carla/trafficmanager/ALSM.h"
 #include "carla/trafficmanager/CollisionAvoidance.h"
 #include "carla/trafficmanager/Localization.h"
+#include "carla/trafficmanager/TrafficLightResponse.h"
 
 namespace carla {
 namespace traffic_manager {
@@ -92,6 +93,7 @@ void TrafficManagerLocal::Run() {
       }
     }
 
+    // TODO: Perform cleanup for traffic light response related strucutres too.
     AgentLifecycleAndStateManagement(registered_vehicles,
                                      vehicle_id_list,
                                      unregistered_actors,
@@ -147,6 +149,19 @@ void TrafficManagerLocal::Run() {
                          parameters,
                          collision_locks,
                          collision_frame_ptr);
+    }
+
+    for (unsigned long index = 0u; index < vehicle_id_list.size(); ++index)
+    {
+      TrafficLightResponse(index,
+                           vehicle_id_list,
+                           tl_state_map,
+                           buffer_map,
+                           parameters,
+                           vehicle_last_ticket,
+                           junction_last_ticket,
+                           vehicle_last_junction,
+                           tl_frame_ptr);
     }
 
     // Wait for external trigger to complete cycle in synchronous mode.

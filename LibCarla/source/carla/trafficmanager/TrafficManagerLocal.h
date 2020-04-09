@@ -130,6 +130,12 @@ private:
   ControlFramePtr control_frame_ptr;
   /// Structure to keep track of collision locking.
   CollisionLockMap collision_locks;
+  /// Map containing the time ticket issued for vehicles.
+  std::unordered_map<ActorId, TimeInstance> vehicle_last_ticket;
+  /// Map containing the previous time ticket issued for junctions.
+  std::unordered_map<JunctionID, TimeInstance> junction_last_ticket;
+  /// Map containing the previous junction visited by a vehicle.
+  std::unordered_map<ActorId, JunctionID> vehicle_last_junction;
 
   /// Method to check if all traffic lights are frozen in a group.
   bool CheckAllFrozen(TLGroup tl_to_freeze);
