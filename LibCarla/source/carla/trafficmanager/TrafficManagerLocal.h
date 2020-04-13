@@ -136,6 +136,10 @@ private:
   std::unordered_map<JunctionID, TimeInstance> junction_last_ticket;
   /// Map containing the previous junction visited by a vehicle.
   std::unordered_map<ActorId, JunctionID> vehicle_last_junction;
+  /// Map containing PID controller state for each vehicle.
+  std::unordered_map<ActorId, StateEntry> pid_state_map;
+  /// Map containing previous teleportation instance for each vehicle.
+  std::unordered_map<ActorId, TimeInstance> teleportation_instance;
 
   /// Method to check if all traffic lights are frozen in a group.
   bool CheckAllFrozen(TLGroup tl_to_freeze);

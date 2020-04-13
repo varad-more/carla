@@ -9,6 +9,7 @@
 #include "carla/trafficmanager/ALSM.h"
 #include "carla/trafficmanager/CollisionAvoidance.h"
 #include "carla/trafficmanager/Localization.h"
+#include "carla/trafficmanager/MotionPlan.h"
 #include "carla/trafficmanager/TrafficLightResponse.h"
 
 namespace carla {
@@ -65,9 +66,10 @@ void TrafficManagerLocal::Start() {
 }
 
 void TrafficManagerLocal::Run() {
-  bool sync_mode = false;
+
+  bool sync_mode = parameters.GetSynchronousMode();
+
   while (run_traffic_manger.load()) {
-    sync_mode = parameters.GetSynchronousMode();
     // Wait for external trigger to initiate cycle in synchronous mode.
     if (sync_mode) {
       std::unique_lock<std::mutex> lock(step_execution_mutex);
@@ -78,7 +80,7 @@ void TrafficManagerLocal::Run() {
     }
 
     // Skipping velocity update if elapsed time is less than 0.05s in asynchronous, hybrid mode.
-    if (!parameters.GetSynchronousMode())
+    if (!sync_mode)
     {
       TimePoint current_instance = chr::system_clock::now();
       chr::duration<float> elapsed_time = current_instance - previous_update_instance;
@@ -162,6 +164,34 @@ void TrafficManagerLocal::Run() {
                            junction_last_ticket,
                            vehicle_last_junction,
                            tl_frame_ptr);
+    }
+
+    for (unsigned long index = 0u; index < vehicle_id_list.size(); ++index)
+    {
+      MotionPlan(index,
+                 vehicle_id_list,
+                 kinematic_state_map,
+                 static_attribute_map,
+                 parameters,
+                 buffer_map,
+                 longitudinal_PID_parameters,
+                 longitudinal_highway_PID_parameters,
+                 lateral_PID_parameters,
+                 lateral_highway_PID_parameters,
+                 collision_frame_ptr,
+                 tl_frame_ptr,
+                 pid_state_map,
+                 teleportation_instance,
+                 control_frame_ptr);
+    }
+
+    if (sync_mode)
+    {
+      episode_proxy.Lock()->ApplyBatchSync(*control_frame_ptr.get(), false);
+    }
+    else
+    {
+      episode_proxy.Lock()->ApplyBatchSync(*control_frame_ptr.get(), false);
     }
 
     // Wait for external trigger to complete cycle in synchronous mode.

@@ -95,11 +95,32 @@ static const float GRID_SIZE = 4.0f;
 static const float PED_GRID_SIZE = 10.0f;
 static const float MAX_GEODESIC_GRID_LENGTH = 20.0f;
 static const float MAP_RESOLUTION = 0.1f;
-} // namespace MapConstants
+} // namespace Map
 
 namespace TrafficLight
 {
 static const unsigned int NO_SIGNAL_PASSTHROUGH_INTERVAL = 5u;
+} // namespace TrafficLight
+
+namespace MotionPlan
+{
+static const float RELATIVE_APPROACH_SPEED = 10.0f / 3.6f;
+static const float MIN_FOLLOW_LEAD_DISTANCE = 5.0f;
+static const float MAX_FOLLOW_LEAD_DISTANCE = 10.0f;
+static const float FOLLOW_DISTANCE_RATE = RATE(MAX_FOLLOW_LEAD_DISTANCE,
+                                               MIN_FOLLOW_LEAD_DISTANCE,
+                                               SpeedThreshold::ARBITRARY_MAX_SPEED);
+static const float CRITICAL_BRAKING_MARGIN = 0.25f;
+static const float EPSILON_RELATIVE_SPEED = 0.001f;
+} // namespace MotionPlan
+
+namespace PID
+{
+static const float MAX_THROTTLE = 0.7f;
+static const float MAX_BRAKE = 1.0f;
+static const float VELOCITY_INTEGRAL_MAX = 5.0f;
+static const float VELOCITY_INTEGRAL_MIN = -5.0f;
+static const float DT = 1.0f/20.0f;
 }
 
 } // namespace constants

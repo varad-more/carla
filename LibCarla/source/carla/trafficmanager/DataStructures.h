@@ -93,5 +93,23 @@ using ControlFramePtr = std::shared_ptr<ControlFrame>;
 using TLFrame = std::vector<bool>;
 using TLFramePtr = std::shared_ptr<TLFrame>;
 
+/// Structure to hold the actuation signals.
+struct ActuationSignal
+{
+  float throttle;
+  float brake;
+  float steer;
+};
+
+/// Structure to hold the controller state.
+struct StateEntry
+{
+  float deviation;
+  float velocity;
+  TimeInstance time_instance;
+  float deviation_integral;
+  float velocity_integral;
+};
+
 } // namespace traffic_manager
 } // namespace carla
