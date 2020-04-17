@@ -191,7 +191,7 @@ void TrafficManagerLocal::Run() {
     }
     else
     {
-      episode_proxy.Lock()->ApplyBatchSync(*control_frame_ptr.get(), false);
+      episode_proxy.Lock()->ApplyBatch(*control_frame_ptr.get(), false);
     }
 
     // Wait for external trigger to complete cycle in synchronous mode.

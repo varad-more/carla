@@ -91,30 +91,24 @@ void RemoveActor(const ActorId actor_id,
                  KinematicStateMap &kinematic_state_map,
                  StaticAttributeMap &attribute_map,
                  TrafficLightStateMap &tl_state_map,
-                 LaneChangeLocationMap &lane_change_location_map)
+                 LaneChangeLocationMap &lane_change_location_map,
+                 const bool registered_actor)
 {
-  bool is_registered_actor = registered_actors.Contains(actor_id);
-  bool is_unregistered_actor = unregistered_actors.find(actor_id) != unregistered_actors.end();
-
-  if (is_registered_actor)
+  if (registered_actor)
   {
     registered_actors.Remove({actor_id});
     buffer_map_ptr->erase(actor_id);
     lane_change_location_map.erase(actor_id);
   }
-
-  if (is_unregistered_actor)
+  else
   {
     unregistered_actors.erase(actor_id);
   }
 
-  if (is_registered_actor || is_unregistered_actor)
-  {
-    track_traffic.DeleteActor(actor_id);
-    kinematic_state_map.erase(actor_id);
-    attribute_map.erase(actor_id);
-    tl_state_map.erase(actor_id);
-  }
+  track_traffic.DeleteActor(actor_id);
+  kinematic_state_map.erase(actor_id);
+  attribute_map.erase(actor_id);
+  tl_state_map.erase(actor_id);
 }
 
 void AgentLifecycleAndStateManagement(AtomicActorSet &registered_vehicles,
@@ -212,7 +206,8 @@ void AgentLifecycleAndStateManagement(AtomicActorSet &registered_vehicles,
                   kinematic_state_map,
                   static_attribute_map,
                   tls_map,
-                  last_lane_change_location);
+                  last_lane_change_location,
+                  true);
       if (!vehicles_unregistered) {
         vehicles_unregistered = true;
       }
@@ -273,7 +268,8 @@ void AgentLifecycleAndStateManagement(AtomicActorSet &registered_vehicles,
                 kinematic_state_map,
                 static_attribute_map,
                 tls_map,
-                last_lane_change_location);
+                last_lane_change_location,
+                false);
   }
 
   // Location of hero vehicle if present.
@@ -368,7 +364,8 @@ void AgentLifecycleAndStateManagement(AtomicActorSet &registered_vehicles,
                 kinematic_state_map,
                 static_attribute_map,
                 tls_map,
-                last_lane_change_location);
+                last_lane_change_location,
+                true);
     elapsed_last_actor_destruction = current_timestamp.elapsed_seconds;
   }
 
