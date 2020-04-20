@@ -11,6 +11,7 @@
 #include <chrono>
 #include <memory>
 #include <random>
+#include <thread>
 #include <unordered_set>
 #include <vector>
 
@@ -34,6 +35,7 @@
 #include "carla/trafficmanager/InMemoryMap.h"
 #include "carla/trafficmanager/Parameters.h"
 #include "carla/trafficmanager/LocalizationUtils.h"
+#include "carla/trafficmanager/SnippetProfiler.h"
 #include "carla/trafficmanager/TrackTraffic.h"
 #include "carla/trafficmanager/TrafficManagerBase.h"
 #include "carla/trafficmanager/TrafficManagerServer.h"
@@ -140,6 +142,8 @@ private:
   std::unordered_map<ActorId, StateEntry> pid_state_map;
   /// Map containing previous teleportation instance for each vehicle.
   std::unordered_map<ActorId, TimeInstance> teleportation_instance;
+
+  SnippetProfiler snippet_profiler;
 
   /// Method to check if all traffic lights are frozen in a group.
   bool CheckAllFrozen(TLGroup tl_to_freeze);

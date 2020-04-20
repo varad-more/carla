@@ -2,6 +2,7 @@
 /// This file has functionality for motion planning based on information
 /// from localization, collision avoidance and traffic light response.
 
+#include "carla/client/DebugHelper.h"
 #include "carla/client/detail/EpisodeProxy.h"
 #include "carla/rpc/VehicleControl.h"
 #include "carla/rpc/Command.h"
@@ -48,7 +49,7 @@ void MotionPlan(const unsigned long index,
   const bool ego_physics_enabled = kinematic_state.physics_enabled;
   const Buffer &waypoint_buffer = buffer_map->at(actor_id);
   const CollisionHazardData &collision_hazard = collision_frame->at(index);
-  const bool &tl_hazard = tl_frame->at(actor_id);
+  const bool &tl_hazard = tl_frame->at(index);
 
   const float target_point_distance = std::max(ego_speed * TARGET_WAYPOINT_TIME_HORIZON,
                                                TARGET_WAYPOINT_HORIZON_LENGTH);

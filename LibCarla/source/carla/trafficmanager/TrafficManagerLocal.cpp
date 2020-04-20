@@ -95,6 +95,7 @@ void TrafficManagerLocal::Run() {
       }
     }
 
+    snippet_profiler.MeasureExecutionTime("ALSM", true);
     // TODO: Perform cleanup for traffic light response related strucutres too.
     AgentLifecycleAndStateManagement(registered_vehicles,
                                      vehicle_id_list,
@@ -112,6 +113,7 @@ void TrafficManagerLocal::Run() {
                                      parameters,
                                      world,
                                      local_map);
+    snippet_profiler.MeasureExecutionTime("ALSM", false);
 
     int current_registered_vehicles_state = registered_vehicles.GetState();
     unsigned long number_of_vehicles = vehicle_id_list.size();
@@ -127,6 +129,7 @@ void TrafficManagerLocal::Run() {
       registered_vehicles_state = registered_vehicles.GetState();
     }
 
+    snippet_profiler.MeasureExecutionTime("Localization", true);
     for (unsigned long index = 0u; index < vehicle_id_list.size(); ++index)
     {
       Localization(index,
@@ -138,7 +141,9 @@ void TrafficManagerLocal::Run() {
                    parameters,
                    last_lane_change_location);
     }
+    snippet_profiler.MeasureExecutionTime("Localization", false);
 
+    snippet_profiler.MeasureExecutionTime("Collision", true);
     for (unsigned long index = 0u; index < vehicle_id_list.size(); ++index)
     {
       CollisionAvoidance(index,
@@ -152,7 +157,9 @@ void TrafficManagerLocal::Run() {
                          collision_locks,
                          collision_frame_ptr);
     }
+    snippet_profiler.MeasureExecutionTime("Collision", false);
 
+    snippet_profiler.MeasureExecutionTime("TrafficLight", true);
     for (unsigned long index = 0u; index < vehicle_id_list.size(); ++index)
     {
       TrafficLightResponse(index,
@@ -165,7 +172,9 @@ void TrafficManagerLocal::Run() {
                            vehicle_last_junction,
                            tl_frame_ptr);
     }
+    snippet_profiler.MeasureExecutionTime("TrafficLight", false);
 
+    snippet_profiler.MeasureExecutionTime("MotionPlan", true);
     for (unsigned long index = 0u; index < vehicle_id_list.size(); ++index)
     {
       MotionPlan(index,
@@ -184,6 +193,7 @@ void TrafficManagerLocal::Run() {
                  teleportation_instance,
                  control_frame_ptr);
     }
+    snippet_profiler.MeasureExecutionTime("MotionPlan", false);
 
     if (sync_mode)
     {
@@ -203,6 +213,10 @@ void TrafficManagerLocal::Run() {
       // Set flag to false, unblock RunStep() call and release mutex lock.
       step_end.store(false);
       step_complete_trigger.notify_one();
+    }
+    else {
+      // TODO : Remove dependency on sleep or find a way to reduce sleep time.
+      std::this_thread::sleep_for(0.01s);
     }
   }
 }

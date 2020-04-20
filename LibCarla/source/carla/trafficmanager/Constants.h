@@ -53,7 +53,7 @@ static const float HORIZON_RATE = RATE(MAXIMUM_HORIZON_LENGTH,
 namespace WaypointSelection
 {
 static const float TARGET_WAYPOINT_TIME_HORIZON = 1.0f;
-static const float TARGET_WAYPOINT_HORIZON_LENGTH = 5.0f;
+static const float TARGET_WAYPOINT_HORIZON_LENGTH = 2.5f;
 static const float JUNCTION_LOOK_AHEAD = 10.0f; // m
 } // namespace WaypointSelection
 
