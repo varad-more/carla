@@ -12,6 +12,8 @@
 
 #include <thread>
 
+#include <thread>
+
 #include <boost/python/stl_iterator.hpp>
 
 using carla::traffic_manager::constants::Networking::TM_DEFAULT_PORT;

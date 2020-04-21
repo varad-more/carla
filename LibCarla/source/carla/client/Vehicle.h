@@ -14,7 +14,6 @@
 #include "carla/trafficmanager/TrafficManager.h"
 #include "carla/trafficmanager/Constants.h"
 
-
 namespace carla {
 
 namespace traffic_manager {
