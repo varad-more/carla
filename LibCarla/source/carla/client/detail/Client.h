@@ -17,11 +17,13 @@
 #include "carla/rpc/CommandResponse.h"
 #include "carla/rpc/EpisodeInfo.h"
 #include "carla/rpc/EpisodeSettings.h"
+#include "carla/rpc/LightState.h"
 #include "carla/rpc/MapInfo.h"
 #include "carla/rpc/TrafficLightState.h"
 #include "carla/rpc/VehiclePhysicsControl.h"
 #include "carla/rpc/VehicleLightState.h"
 #include "carla/rpc/WeatherParameters.h"
+#include "carla/rpc/OpendriveGenerationParameters.h"
 
 #include <functional>
 #include <memory>
@@ -86,7 +88,8 @@ namespace detail {
 
     void LoadEpisode(std::string map_name);
 
-    void CopyOpenDriveToServer(std::string opendrive, double resolution, double wall_height, double additional_width);
+    void CopyOpenDriveToServer(
+        std::string opendrive, const rpc::OpendriveGenerationParameters & params);
 
     rpc::EpisodeInfo GetEpisodeInfo();
 
@@ -230,6 +233,12 @@ namespace detail {
         bool do_tick_cue);
 
     uint64_t SendTickCue();
+
+    std::vector<rpc::LightState> QueryLightsStateToServer() const;
+
+    void UpdateServerLightsState(
+        std::vector<rpc::LightState>& lights,
+        bool discard_client = false) const;
 
   private:
 

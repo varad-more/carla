@@ -24,6 +24,7 @@
 #include <carla/rpc/DebugShape.h>
 #include <carla/rpc/EpisodeInfo.h>
 #include <carla/rpc/EpisodeSettings.h>
+#include <carla/rpc/LightState.h>
 #include <carla/rpc/MapInfo.h>
 #include <carla/rpc/Response.h>
 #include <carla/rpc/Server.h>
@@ -234,10 +235,10 @@ void FCarlaServer::FPimpl::BindActions()
     return R<void>::Success();
   };
 
-  BIND_SYNC(copy_opendrive_to_file) << [this](const std::string &opendrive, double resolution, double wall_height, double additional_width) -> R<void>
+  BIND_SYNC(copy_opendrive_to_file) << [this](const std::string &opendrive, carla::rpc::OpendriveGenerationParameters Params) -> R<void>
   {
     REQUIRE_CARLA_EPISODE();
-    if (!Episode->LoadNewOpendriveEpisode(cr::ToFString(opendrive), resolution, wall_height, additional_width))
+    if (!Episode->LoadNewOpendriveEpisode(cr::ToFString(opendrive), Params))
     {
       RESPOND_ERROR("opendrive could not be correctly parsed");
     }
@@ -1010,6 +1011,7 @@ void FCarlaServer::FPimpl::BindActions()
       [=](auto, const C::ApplyAngularVelocity &c) { MAKE_RESULT(set_actor_angular_velocity(c.actor, c.angular_velocity)); },
       [=](auto, const C::ApplyImpulse &c) {         MAKE_RESULT(add_actor_impulse(c.actor, c.impulse)); },
       [=](auto, const C::SetSimulatePhysics &c) {   MAKE_RESULT(set_actor_simulate_physics(c.actor, c.enabled)); },
+      // TODO: SetAutopilot should be removed. This is the old way to control the vehicles
       [=](auto, const C::SetAutopilot &c) {         MAKE_RESULT(set_actor_autopilot(c.actor, c.enabled)); },
       [=](auto, const C::ApplyWalkerState &c) {     MAKE_RESULT(set_walker_state(c.actor, c.transform, c.speed)); });
 
@@ -1031,6 +1033,34 @@ void FCarlaServer::FPimpl::BindActions()
     }
     return result;
   };
+
+  // ~~ Light Subsystem ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  BIND_SYNC(query_lights_state) << [this](std::string client) -> R<std::vector<cr::LightState>>
+  {
+    REQUIRE_CARLA_EPISODE();
+    std::vector<cr::LightState> result;
+    auto *World = Episode->GetWorld();
+    if(World) {
+      UCarlaLightSubsystem* CarlaLightSubsystem = World->GetSubsystem<UCarlaLightSubsystem>();
+      result = CarlaLightSubsystem->GetLights(FString(client.c_str()));
+    }
+    return result;
+  };
+
+  BIND_SYNC(update_lights_state) << [this]
+    (std::string client, const std::vector<cr::LightState>& lights, bool discard_client) -> R<void>
+  {
+    REQUIRE_CARLA_EPISODE();
+    auto *World = Episode->GetWorld();
+    if(World) {
+      UCarlaLightSubsystem* CarlaLightSubsystem = World->GetSubsystem<UCarlaLightSubsystem>();
+      CarlaLightSubsystem->SetLights(FString(client.c_str()), lights, discard_client);
+    }
+    return R<void>::Success();
+  };
+
+
 }
 
 // =============================================================================

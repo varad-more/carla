@@ -66,6 +66,8 @@ private:
   std::atomic<float> distance_margin{2.0};
   /// Hybrid physics mode switch.
   std::atomic<bool> hybrid_physics_mode{false};
+  /// Hybrid physics radius.
+  std::atomic<float> hybrid_physics_radius {70.0};
 
 public:
   Parameters();
@@ -125,6 +127,9 @@ public:
   /// Method to set synchronous mode.
   void SetSynchronousMode(const bool mode_switch = true);
 
+  /// Method to set hybrid physics radius.
+  void SetHybridPhysicsRadius(const float radius);
+
   ///////////////////////////////// GETTERS /////////////////////////////////////
 
   /// Method to query target velocity for a vehicle.
@@ -165,6 +170,9 @@ public:
 
   /// Method to retrieve hybrid physics mode.
   bool GetHybridPhysicsMode() const;
+
+  /// Method to retrieve hybrid physics radius.
+  float GetHybridPhysicsRadius() const;
 
   /// Synchronous mode time out variable.
   std::chrono::duration<double, std::milli> synchronous_time_out;

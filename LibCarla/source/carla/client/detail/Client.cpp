@@ -145,9 +145,9 @@ namespace detail {
     _pimpl->CallAndWait<void>("load_new_episode", std::move(map_name));
   }
 
-  void Client::CopyOpenDriveToServer(std::string opendrive, double resolution, double wall_height, double additional_width) {
+  void Client::CopyOpenDriveToServer(std::string opendrive, const rpc::OpendriveGenerationParameters & params) {
     // Await response, we need to be sure in this one.
-    _pimpl->CallAndWait<void>("copy_opendrive_to_file", std::move(opendrive), resolution, wall_height, additional_width);
+    _pimpl->CallAndWait<void>("copy_opendrive_to_file", std::move(opendrive), params);
   }
 
   rpc::EpisodeInfo Client::GetEpisodeInfo() {
@@ -371,6 +371,15 @@ namespace detail {
 
   uint64_t Client::SendTickCue() {
     return _pimpl->CallAndWait<uint64_t>("tick_cue");
+  }
+
+  std::vector<rpc::LightState> Client::QueryLightsStateToServer() const {
+    using return_t = std::vector<rpc::LightState>;
+    return _pimpl->CallAndWait<return_t>("query_lights_state", _pimpl->endpoint);
+  }
+
+  void Client::UpdateServerLightsState(std::vector<rpc::LightState>& lights, bool discard_client) const {
+    _pimpl->AsyncCall("update_lights_state", _pimpl->endpoint, std::move(lights), discard_client);
   }
 
 } // namespace detail

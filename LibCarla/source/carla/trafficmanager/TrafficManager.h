@@ -6,11 +6,8 @@
 
 #pragma once
 
-#include <algorithm>
-#include <memory>
+#include <map>
 #include <mutex>
-#include <random>
-#include <unordered_set>
 #include <vector>
 
 #include "carla/client/Actor.h"
@@ -26,11 +23,6 @@
 
 #include "carla/trafficmanager/Constants.h"
 #include "carla/trafficmanager/TrafficManagerBase.h"
-#include "carla/trafficmanager/TrafficManagerLocal.h"
-#include "carla/trafficmanager/TrafficManagerRemote.h"
-
-#define INVALID_INDEX           -1
-#define IP_DATA_BUFFER_SIZE     80
 
 namespace carla {
 namespace traffic_manager {
@@ -53,6 +45,8 @@ public:
     _port = other._port;
   }
 
+  TrafficManager() {};
+
   TrafficManager(TrafficManager &&) = default;
 
   TrafficManager &operator=(const TrafficManager &) = default;
@@ -64,11 +58,28 @@ public:
 
   static void Tick();
 
+  uint16_t Port() const {
+    return _port;
+  }
+
+  bool IsValidPort() const {
+    // The first 1024 ports are reserved by the OS
+    return (_port > 1023);
+  }
+
   /// This method sets the hybrid physics mode.
   void SetHybridPhysicsMode(const bool mode_switch) {
     TrafficManagerBase* tm_ptr = GetTM(_port);
     if(tm_ptr != nullptr){
       tm_ptr->SetHybridPhysicsMode(mode_switch);
+    }
+  }
+
+  /// This method sets the hybrid physics radius.
+  void SetHybridPhysicsRadius(const float radius) {
+    TrafficManagerBase* tm_ptr = GetTM(_port);
+    if(tm_ptr != nullptr){
+      tm_ptr->SetHybridPhysicsRadius(radius);
     }
   }
 
@@ -237,15 +248,15 @@ private:
     auto it = _tm_map.find(port);
     if (it != _tm_map.end()) {
       _mutex.unlock();
-      return it->second.get();
+      return it->second;
     }
     return nullptr;
   }
 
-  static std::map<uint16_t, std::unique_ptr<TrafficManagerBase>> _tm_map;
+  static std::map<uint16_t, TrafficManagerBase*> _tm_map;
   static std::mutex _mutex;
 
-  uint16_t _port = TM_DEFAULT_PORT;
+  uint16_t _port = 0;
 
 };
 

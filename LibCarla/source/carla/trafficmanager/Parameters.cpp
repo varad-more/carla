@@ -24,6 +24,11 @@ void Parameters::SetHybridPhysicsMode(const bool mode_switch) {
   hybrid_physics_mode.store(mode_switch);
 }
 
+void Parameters::SetHybridPhysicsRadius(const float radius) {
+
+  hybrid_physics_radius.store(radius);
+}
+
 void Parameters::SetPercentageSpeedDifference(const ActorPtr &actor, const float percentage) {
 
   float new_percentage = std::min(100.0f, percentage);
@@ -257,6 +262,11 @@ float Parameters::GetPercentageIgnoreVehicles(const ActorId &actor_id) const {
 bool Parameters::GetHybridPhysicsMode() const {
 
   return hybrid_physics_mode.load();
+}
+
+float Parameters::GetHybridPhysicsRadius() const {
+
+  return hybrid_physics_radius.load();
 }
 
 } // namespace traffic_manager

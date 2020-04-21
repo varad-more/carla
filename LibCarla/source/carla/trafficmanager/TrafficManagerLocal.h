@@ -246,7 +246,11 @@ public:
 
   /// Method to set hybrid physics mode.
   void SetHybridPhysicsMode(const bool mode_switch);
-};
+
+  /// Method to set hybrid physics radius.
+  void SetHybridPhysicsRadius(const float radius);
+
+  };
 
 } // namespace traffic_manager
 } // namespace carla
