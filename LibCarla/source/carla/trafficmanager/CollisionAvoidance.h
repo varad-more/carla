@@ -102,7 +102,6 @@ std::pair<bool, float> NegotiateCollision(const ActorId reference_vehicle_id,
                                           const float reference_lead_distance,
                                           const float other_lead_distance);
 
-
 void CollisionAvoidance(const unsigned long index,
                         const std::vector<ActorId> &vehicle_id_list,
                         const KinematicStateMap &state_map,
@@ -251,7 +250,7 @@ LocationList GetBoundary(const KinematicState &kinematic_state, const StaticAttr
   const cg::Vector3D y_boundary_vector = perpendicular_vector * (bbox_y + forward_extension);
 
   // Four corners of the vehicle in top view clockwise order (left-handed system).
-  const cg::Location location = kinematic_state.velocity;
+  const cg::Location location = kinematic_state.location;
   LocationList bbox_boundary = {
     location + cg::Location(x_boundary_vector - y_boundary_vector),
     location + cg::Location(-1.0f * x_boundary_vector - y_boundary_vector),
@@ -273,73 +272,76 @@ LocationList GetGeodesicBoundary(const ActorId actor_id,
   LocationList geodesic_boundary;
 
   if (geodesic_boundary_map.find(actor_id) != geodesic_boundary_map.end()) {
+
     geodesic_boundary = geodesic_boundary_map.at(actor_id);
-  }
-
-  const LocationList bbox = GetBoundary(kinematic_state, attributes);
-
-  if (attributes.actor_type == ActorType::Vehicle) {
-
-    float bbox_extension = GetBoundingBoxExtention(actor_id, kinematic_state, collision_lock_map);
-    bbox_extension = MAX(specific_lead_distance, bbox_extension);
-    const float bbox_extension_square = SQUARE(bbox_extension);
-
-    LocationList left_boundary;
-    LocationList right_boundary;
-    const float width = attributes.half_width;
-    const float length = attributes.half_length;
-
-    const TargetWPInfo target_wp_info = GetTargetWaypoint(waypoint_buffer, length);
-    const SimpleWaypointPtr boundary_start = target_wp_info.first;
-    const uint64_t boundary_start_index = target_wp_info.second;
-
-    // At non-signalized junctions, we extend the boundary across the junction
-    // and in all other situations, boundary length is velocity-dependent.
-    SimpleWaypointPtr boundary_end = nullptr;
-    SimpleWaypointPtr current_point = waypoint_buffer.at(boundary_start_index);
-    bool reached_distance = false;
-    for (uint64_t j = boundary_start_index; !reached_distance && (j < waypoint_buffer.size()); ++j) {
-
-      if (boundary_start->DistanceSquared(current_point) > bbox_extension_square
-          || j == waypoint_buffer.size() - 1) {
-        reached_distance = true;
-      }
-
-      if (boundary_end == nullptr
-          || cg::Math::Dot(boundary_end->GetForwardVector(), current_point->GetForwardVector()) < COS_10_DEGREES
-          || reached_distance) {
-
-        const cg::Vector3D heading_vector = current_point->GetForwardVector();
-        const cg::Location location = current_point->GetLocation();
-        cg::Vector3D perpendicular_vector = cg::Vector3D(-heading_vector.y, heading_vector.x, 0.0f);
-        perpendicular_vector = perpendicular_vector.MakeUnitVector();
-        // Direction determined for the left-handed system.
-        const cg::Vector3D scaled_perpendicular = perpendicular_vector * width;
-        left_boundary.push_back(location + cg::Location(scaled_perpendicular));
-        right_boundary.push_back(location + cg::Location(-1.0f * scaled_perpendicular));
-
-        boundary_end = current_point;
-      }
-
-      current_point = waypoint_buffer.at(j);
-    }
-
-    // Reversing right boundary to construct clockwise (left-hand system)
-    // boundary. This is so because both left and right boundary vectors have
-    // the closest point to the vehicle at their starting index for the right
-    // boundary,
-    // we want to begin at the farthest point to have a clockwise trace.
-    std::reverse(right_boundary.begin(), right_boundary.end());
-    geodesic_boundary.insert(geodesic_boundary.end(), right_boundary.begin(), right_boundary.end());
-    geodesic_boundary.insert(geodesic_boundary.end(), bbox.begin(), bbox.end());
-    geodesic_boundary.insert(geodesic_boundary.end(), left_boundary.begin(), left_boundary.end());
 
   } else {
 
-    geodesic_boundary = bbox;
-  }
+    const LocationList bbox = GetBoundary(kinematic_state, attributes);
 
-  geodesic_boundary_map.insert({actor_id, geodesic_boundary});
+    if (attributes.actor_type == ActorType::Vehicle) {
+
+      float bbox_extension = GetBoundingBoxExtention(actor_id, kinematic_state, collision_lock_map);
+      bbox_extension = MAX(specific_lead_distance, bbox_extension);
+      const float bbox_extension_square = SQUARE(bbox_extension);
+
+      LocationList left_boundary;
+      LocationList right_boundary;
+      const float width = attributes.half_width;
+      const float length = attributes.half_length;
+
+      const TargetWPInfo target_wp_info = GetTargetWaypoint(waypoint_buffer, length);
+      const SimpleWaypointPtr boundary_start = target_wp_info.first;
+      const uint64_t boundary_start_index = target_wp_info.second;
+
+      // At non-signalized junctions, we extend the boundary across the junction
+      // and in all other situations, boundary length is velocity-dependent.
+      SimpleWaypointPtr boundary_end = nullptr;
+      SimpleWaypointPtr current_point = waypoint_buffer.at(boundary_start_index);
+      bool reached_distance = false;
+      for (uint64_t j = boundary_start_index; !reached_distance && (j < waypoint_buffer.size()); ++j) {
+
+        if (boundary_start->DistanceSquared(current_point) > bbox_extension_square
+            || j == waypoint_buffer.size() - 1) {
+          reached_distance = true;
+        }
+
+        if (boundary_end == nullptr
+            || cg::Math::Dot(boundary_end->GetForwardVector(), current_point->GetForwardVector()) < COS_10_DEGREES
+            || reached_distance) {
+
+          const cg::Vector3D heading_vector = current_point->GetForwardVector();
+          const cg::Location location = current_point->GetLocation();
+          cg::Vector3D perpendicular_vector = cg::Vector3D(-heading_vector.y, heading_vector.x, 0.0f);
+          perpendicular_vector = perpendicular_vector.MakeUnitVector();
+          // Direction determined for the left-handed system.
+          const cg::Vector3D scaled_perpendicular = perpendicular_vector * width;
+          left_boundary.push_back(location + cg::Location(scaled_perpendicular));
+          right_boundary.push_back(location + cg::Location(-1.0f * scaled_perpendicular));
+
+          boundary_end = current_point;
+        }
+
+        current_point = waypoint_buffer.at(j);
+      }
+
+      // Reversing right boundary to construct clockwise (left-hand system)
+      // boundary. This is so because both left and right boundary vectors have
+      // the closest point to the vehicle at their starting index for the right
+      // boundary,
+      // we want to begin at the farthest point to have a clockwise trace.
+      std::reverse(right_boundary.begin(), right_boundary.end());
+      geodesic_boundary.insert(geodesic_boundary.end(), right_boundary.begin(), right_boundary.end());
+      geodesic_boundary.insert(geodesic_boundary.end(), bbox.begin(), bbox.end());
+      geodesic_boundary.insert(geodesic_boundary.end(), left_boundary.begin(), left_boundary.end());
+
+    } else {
+
+      geodesic_boundary = bbox;
+    }
+
+    geodesic_boundary_map.insert({actor_id, geodesic_boundary});
+  }
 
   return geodesic_boundary;
 }
