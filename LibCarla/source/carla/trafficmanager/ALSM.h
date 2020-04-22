@@ -290,6 +290,7 @@ void AgentLifecycleAndStateManagement(AtomicActorSet &registered_vehicles,
     cg::Transform vehicle_transform = vehicle->GetTransform();
     cg::Location vehicle_location = vehicle_transform.location;
     cg::Rotation vehicle_rotation = vehicle_transform.rotation;
+    cg::Vector3D vehicle_velocity = vehicle->GetVelocity();
 
     // Initializing idle times.
     if (idle_time.find(actor_id) == idle_time.end() && current_timestamp.elapsed_seconds != 0) {
@@ -332,23 +333,14 @@ void AgentLifecycleAndStateManagement(AtomicActorSet &registered_vehicles,
     kinematic_state_map.at(actor_id).physics_enabled = enable_physics;
     vehicle->SetSimulatePhysics(enable_physics);
 
-    // When we say velocity, we usually mean velocity for a vehicle along it's heading.
-    // Velocity component due to rotation can be removed by taking dot product with heading vector.
-    cg::Vector3D heading = vehicle->GetTransform().GetForwardVector();
-    if (enable_physics)
-    {
-      kinematic_state_map.at(actor_id).velocity = cg::Math::Dot(vehicle->GetVelocity(), heading) * heading;
-    }
-    else
+    if (!enable_physics)
     {
       cg::Vector3D displacement = (vehicle_location - kinematic_state_map.at(actor_id).location);
-      cg::Vector3D displacement_along_heading = cg::Math::Dot(displacement, heading) * heading;
-      cg::Vector3D velocity = displacement_along_heading / dt;
-      kinematic_state_map.at(actor_id).velocity = velocity;
+      vehicle_velocity = displacement / dt;
     }
 
-    // Updating location after velocity is computed.
-    kinematic_state_map.at(actor_id).location = vehicle_location;
+    // Updating state.
+    kinematic_state_map.at(actor_id) = {enable_physics, vehicle_location, vehicle_rotation, vehicle_velocity};
 
     // Updating idle time when necessary.
     UpdateIdleTime(idle_time, max_idle_time, actor_id, kinematic_state_map, tls_map, current_timestamp);
