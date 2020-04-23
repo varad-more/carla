@@ -117,8 +117,11 @@ void TrafficManagerLocal::Run() {
 
     int current_registered_vehicles_state = registered_vehicles.GetState();
     unsigned long number_of_vehicles = vehicle_id_list.size();
-    if (registered_vehicles_state != current_registered_vehicles_state){
+    if (registered_vehicles_state != current_registered_vehicles_state
+        || number_of_vehicles != registered_vehicles.Size()){
 
+      vehicle_id_list = registered_vehicles.GetIDList();
+      number_of_vehicles = vehicle_id_list.size();
       unsigned long new_frame_size = INITIAL_SIZE + GROWTH_STEP_SIZE * (number_of_vehicles / GROWTH_STEP_SIZE);
       if (new_frame_size != control_frame_ptr->size())
       {
@@ -128,6 +131,22 @@ void TrafficManagerLocal::Run() {
       }
       registered_vehicles_state = registered_vehicles.GetState();
     }
+
+    /////////////////////////////// DEBUG ///////////////////////////////
+    // for (const auto &kinematic_state_info: kinematic_state_map) {
+    //   const ActorId &actor_id = kinematic_state_info.first;
+    //   const KinematicState &state = kinematic_state_info.second;
+    //   cc::DebugHelper::Color debug_color {0u, 0u, 0u};
+    //   if (registered_vehicles.Contains(actor_id)) {
+    //     debug_color.r = 255u;
+    //   }
+    //   if (unregistered_actors.find(actor_id) != unregistered_actors.end()) {
+    //     debug_color.b = 255u;
+    //   }
+    //   debug_helper.DrawPoint(state.location + cg::Location(0, 0, 2),
+    //                          0.2f, debug_color, 0.01f);
+    // }
+    /////////////////////////////////////////////////////////////////////
 
     snippet_profiler.MeasureExecutionTime("Localization", true);
     for (unsigned long index = 0u; index < vehicle_id_list.size(); ++index)
@@ -213,10 +232,6 @@ void TrafficManagerLocal::Run() {
       // Set flag to false, unblock RunStep() call and release mutex lock.
       step_end.store(false);
       step_complete_trigger.notify_one();
-    }
-    else {
-      // TODO : Remove dependency on sleep or find a way to reduce sleep time.
-      std::this_thread::sleep_for(0.01s);
     }
   }
 }
