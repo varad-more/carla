@@ -116,83 +116,90 @@ void CollisionAvoidance(const unsigned long index,
   GeodesicBoundaryMap geodesic_boundary_map;
   GeometryComparisonMap geometry_cache;
 
-  const ActorId ego_actor_id = vehicle_id_list.at(index);
-  const KinematicState &ego_kinematic_state = state_map.at(ego_actor_id);
-  const StaticAttributes &ego_attributes = attribute_map.at(ego_actor_id);
-  const cg::Location ego_location = ego_kinematic_state.location;
-  const Buffer &ego_buffer = buffer_map->at(ego_actor_id);
-  const uint64_t look_ahead_index = GetTargetWaypoint(ego_buffer, JUNCTION_LOOK_AHEAD).second;
-
-  ActorIdSet overlapping_actors = track_traffic.GetOverlappingVehicles(ego_actor_id);
-  std::vector<ActorId> collision_candidate_ids;
-
-  // Run through vehicles with overlapping paths and filter them;
-  float collision_radius_square = SQUARE(MAX_COLLISION_RADIUS);
-  for (ActorId overlapping_actor_id : overlapping_actors)
-  {
-    // If actor is within maximum collision avoidance and vertical overlap range.
-    const cg::Location &overlapping_actor_location = GetLocation(state_map, overlapping_actor_id);
-    if (overlapping_actor_id != ego_actor_id
-        && cg::Math::DistanceSquared(overlapping_actor_location, ego_location) < collision_radius_square
-        && std::abs(ego_location.z - overlapping_actor_location.z) < VERTICAL_OVERLAP_THRESHOLD)
-    {
-      collision_candidate_ids.push_back(overlapping_actor_id);
-    }
-  }
-
-  // Sorting collision candidates in accending order of distance to current vehicle.
-  std::sort(collision_candidate_ids.begin(), collision_candidate_ids.end(),
-            [&state_map, &ego_location](const ActorId &a_id_1, const ActorId &a_id_2) {
-              const cg::Location &e_loc = ego_location;
-              const cg::Location &loc_1 = GetLocation(state_map, a_id_1);
-              const cg::Location &loc_2 = GetLocation(state_map, a_id_2);
-              return (cg::Math::DistanceSquared(e_loc, loc_1) < cg::Math::DistanceSquared(e_loc, loc_2));
-            });
-
-  const float reference_lead_distance = parameters.GetDistanceToLeadingVehicle(ego_actor_id);
-
   ActorId obstacle_id = 0u;
   bool collision_hazard = false;
   float available_distance_margin = std::numeric_limits<float>::infinity();
 
-  // Check every actor in the vicinity if it poses a collision hazard.
-  for (auto iter = collision_candidate_ids.begin();
-       iter != collision_candidate_ids.end() && !collision_hazard;
-       ++iter)
+  const ActorId ego_actor_id = vehicle_id_list.at(index);
+  if (state_map.find(ego_actor_id) != state_map.end()
+      && attribute_map.find(ego_actor_id) != attribute_map.end())
   {
-    const ActorId other_actor_id = *iter;
-    const ActorType other_actor_type = GetType(attribute_map, other_actor_id);
-    const KinematicState &other_kinematic_state = state_map.at(other_actor_id);
-    const StaticAttributes &other_attributes = attribute_map.at(other_actor_id);
+    const KinematicState &ego_kinematic_state = state_map.at(ego_actor_id);
+    const StaticAttributes &ego_attributes = attribute_map.at(ego_actor_id);
+    const cg::Location ego_location = ego_kinematic_state.location;
+    const Buffer &ego_buffer = buffer_map->at(ego_actor_id);
+    const uint64_t look_ahead_index = GetTargetWaypoint(ego_buffer, JUNCTION_LOOK_AHEAD).second;
 
-    if (parameters.GetCollisionDetection(ego_actor_id, other_actor_id))
+    ActorIdSet overlapping_actors = track_traffic.GetOverlappingVehicles(ego_actor_id);
+    std::vector<ActorId> collision_candidate_ids;
+
+    // Run through vehicles with overlapping paths and filter them;
+    float collision_radius_square = SQUARE(MAX_COLLISION_RADIUS);
+    for (ActorId overlapping_actor_id : overlapping_actors)
     {
-      const float other_lead_distance = parameters.GetDistanceToLeadingVehicle(other_actor_id);
-      std::pair<bool, float> negotiation_result = NegotiateCollision(ego_actor_id,
-                                                                     other_actor_id,
-                                                                     geometry_cache,
-                                                                     geodesic_boundary_map,
-                                                                     collision_locks,
-                                                                     ego_kinematic_state,
-                                                                     other_kinematic_state,
-                                                                     ego_attributes,
-                                                                     other_attributes,
-                                                                     tl_state_map.at(ego_actor_id),
-                                                                     buffer_map->at(ego_actor_id),
-                                                                     buffer_map->at(other_actor_id),
-                                                                     look_ahead_index,
-                                                                     reference_lead_distance,
-                                                                     other_lead_distance);
-      if (negotiation_result.first)
+      // If actor is within maximum collision avoidance and vertical overlap range.
+      const cg::Location &overlapping_actor_location = GetLocation(state_map, overlapping_actor_id);
+      if (overlapping_actor_id != ego_actor_id
+          && cg::Math::DistanceSquared(overlapping_actor_location, ego_location) < collision_radius_square
+          && std::abs(ego_location.z - overlapping_actor_location.z) < VERTICAL_OVERLAP_THRESHOLD)
       {
-        if ((other_actor_type == ActorType::Vehicle
-             && parameters.GetPercentageIgnoreVehicles(ego_actor_id) <= (rand() % 101))
-            || (other_actor_type == ActorType::Pedestrian
-                && parameters.GetPercentageIgnoreWalkers(ego_actor_id) <= (rand() % 101)))
+        collision_candidate_ids.push_back(overlapping_actor_id);
+      }
+    }
+
+    // Sorting collision candidates in accending order of distance to current vehicle.
+    std::sort(collision_candidate_ids.begin(), collision_candidate_ids.end(),
+              [&state_map, &ego_location](const ActorId &a_id_1, const ActorId &a_id_2) {
+                const cg::Location &e_loc = ego_location;
+                const cg::Location &loc_1 = GetLocation(state_map, a_id_1);
+                const cg::Location &loc_2 = GetLocation(state_map, a_id_2);
+                return (cg::Math::DistanceSquared(e_loc, loc_1) < cg::Math::DistanceSquared(e_loc, loc_2));
+              });
+
+    const float reference_lead_distance = parameters.GetDistanceToLeadingVehicle(ego_actor_id);
+
+    // Check every actor in the vicinity if it poses a collision hazard.
+    for (auto iter = collision_candidate_ids.begin();
+        iter != collision_candidate_ids.end() && !collision_hazard;
+        ++iter)
+    {
+      const ActorId other_actor_id = *iter;
+      const ActorType other_actor_type = GetType(attribute_map, other_actor_id);
+      const KinematicState &other_kinematic_state = state_map.at(other_actor_id);
+      const StaticAttributes &other_attributes = attribute_map.at(other_actor_id);
+
+      if (parameters.GetCollisionDetection(ego_actor_id, other_actor_id)
+          && tl_state_map.find(ego_actor_id) != tl_state_map.end()
+          && buffer_map->find(ego_actor_id) != buffer_map->end()
+          && buffer_map->find(other_actor_id) != buffer_map->end())
+      {
+        const float other_lead_distance = parameters.GetDistanceToLeadingVehicle(other_actor_id);
+        std::pair<bool, float> negotiation_result = NegotiateCollision(ego_actor_id,
+                                                                      other_actor_id,
+                                                                      geometry_cache,
+                                                                      geodesic_boundary_map,
+                                                                      collision_locks,
+                                                                      ego_kinematic_state,
+                                                                      other_kinematic_state,
+                                                                      ego_attributes,
+                                                                      other_attributes,
+                                                                      tl_state_map.at(ego_actor_id),
+                                                                      buffer_map->at(ego_actor_id),
+                                                                      buffer_map->at(other_actor_id),
+                                                                      look_ahead_index,
+                                                                      reference_lead_distance,
+                                                                      other_lead_distance);
+        if (negotiation_result.first)
         {
-          collision_hazard = true;
-          obstacle_id = other_actor_id;
-          available_distance_margin = negotiation_result.second;
+          if ((other_actor_type == ActorType::Vehicle
+              && parameters.GetPercentageIgnoreVehicles(ego_actor_id) <= (rand() % 101))
+              || (other_actor_type == ActorType::Pedestrian
+                  && parameters.GetPercentageIgnoreWalkers(ego_actor_id) <= (rand() % 101)))
+          {
+            collision_hazard = true;
+            obstacle_id = other_actor_id;
+            available_distance_margin = negotiation_result.second;
+          }
         }
       }
     }
@@ -451,13 +458,19 @@ std::pair<bool, float> NegotiateCollision(const ActorId reference_vehicle_id,
   const cg::Vector3D reference_heading = reference_vehicle_state.rotation.GetForwardVector();
   // Vector from ego position to position of the other vehicle.
   cg::Vector3D reference_to_other = other_location - reference_location;
-  reference_to_other = reference_to_other.MakeUnitVector();
+  float reference_to_other_magnitude = reference_to_other.Length();
+  if (reference_to_other_magnitude > 2.0f * std::numeric_limits<float>::epsilon()) {
+    reference_to_other /= reference_to_other_magnitude;
+  }
 
   // Other vehicle heading.
   const cg::Vector3D other_heading = reference_vehicle_state.rotation.GetForwardVector();
   // Vector from other vehicle position to ego position.
   cg::Vector3D other_to_reference = reference_location - other_location;
-  other_to_reference = other_to_reference.MakeUnitVector();
+  float other_to_reference_magnitude = other_to_reference.Length();
+  if (other_to_reference_magnitude > 2.0f * std::numeric_limits<float>::epsilon()) {
+    other_to_reference /= other_to_reference_magnitude;
+  }
 
   float reference_vehicle_length = reference_vehicle_attributes.half_length * SQUARE_ROOT_OF_TWO;
   float other_vehicle_length = other_vehicle_attributes.half_length * SQUARE_ROOT_OF_TWO;
