@@ -30,8 +30,6 @@
 
 #include "carla/trafficmanager/Parameters.h"
 
-#define SQUARE(a) a * a
-
 namespace carla
 {
 namespace traffic_manager

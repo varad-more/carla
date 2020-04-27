@@ -132,22 +132,6 @@ void TrafficManagerLocal::Run() {
       registered_vehicles_state = registered_vehicles.GetState();
     }
 
-    /////////////////////////////// DEBUG ///////////////////////////////
-    // for (const auto &kinematic_state_info: kinematic_state_map) {
-    //   const ActorId &actor_id = kinematic_state_info.first;
-    //   const KinematicState &state = kinematic_state_info.second;
-    //   cc::DebugHelper::Color debug_color {0u, 0u, 0u};
-    //   if (registered_vehicles.Contains(actor_id)) {
-    //     debug_color.r = 255u;
-    //   }
-    //   if (unregistered_actors.find(actor_id) != unregistered_actors.end()) {
-    //     debug_color.b = 255u;
-    //   }
-    //   debug_helper.DrawPoint(state.location + cg::Location(0, 0, 2),
-    //                          0.2f, debug_color, 0.01f);
-    // }
-    /////////////////////////////////////////////////////////////////////
-
     // snippet_profiler.MeasureExecutionTime("Localization", true);
     for (unsigned long index = 0u; index < vehicle_id_list.size(); ++index)
     {
@@ -214,16 +198,21 @@ void TrafficManagerLocal::Run() {
     }
     // snippet_profiler.MeasureExecutionTime("MotionPlan", false);
 
+    std::vector<carla::rpc::Command> batch_command(number_of_vehicles);
+    for (unsigned long i = 0u; i < number_of_vehicles; ++i) {
+      batch_command.at(i) = control_frame_ptr->at(i);
+    }
+
     if (synchronous_mode)
     {
-      episode_proxy.Lock()->ApplyBatchSync(*control_frame_ptr.get(), false);
+      episode_proxy.Lock()->ApplyBatchSync(std::move(batch_command), false);
 
       step_end.store(true);
       step_end_trigger.notify_one();
     }
     else
     {
-      episode_proxy.Lock()->ApplyBatch(*control_frame_ptr.get(), false);
+      episode_proxy.Lock()->ApplyBatch(std::move(batch_command), false);
     }
   }
 }

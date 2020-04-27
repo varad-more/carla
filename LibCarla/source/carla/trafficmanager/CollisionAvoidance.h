@@ -18,9 +18,6 @@
 #include "carla/trafficmanager/SimpleWaypoint.h"
 #include "carla/trafficmanager/VehicleStateAndAttributeQuery.h"
 
-#define MAX(a, b) a > b ? a : b
-#define SQUARE(a) a * a
-
 namespace carla
 {
 namespace traffic_manager
