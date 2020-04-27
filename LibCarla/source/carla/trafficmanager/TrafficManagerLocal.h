@@ -95,8 +95,6 @@ private:
   std::unordered_map<ActorId, cg::Location> last_lane_change_location;
   /// Reference of hero vehicle.
   ActorPtr hero_vehicle{nullptr};
-  /// Switch indicating hybrid physics mode.
-  bool hybrid_physics_mode{false};
   /// Structure to hold kinematic state for all vehicles.
   KinematicStateMap kinematic_state_map;
   /// Structure to hold static attributes of vehicles.
@@ -121,7 +119,6 @@ private:
   /// Condition variables for progressing synchronous execution.
   std::condition_variable step_begin_trigger;
   std::condition_variable step_end_trigger;
-  std::condition_variable step_complete_trigger;
   /// Single worker thread for sequential execution of sub-components.
   std::unique_ptr<std::thread> worker_thread;
   /// Array to hold output data of collision avoidance.

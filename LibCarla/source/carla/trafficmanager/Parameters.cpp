@@ -168,7 +168,7 @@ bool Parameters::GetCollisionDetection(const ActorId &reference_actor_id, const 
 
 ChangeLaneInfo Parameters::GetForceLaneChange(const ActorId &actor_id) {
 
-  ChangeLaneInfo change_lane_info;
+  ChangeLaneInfo change_lane_info {false, false};
 
   if (force_lane_change.Contains(actor_id)) {
     change_lane_info = force_lane_change.GetValue(actor_id);

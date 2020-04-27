@@ -67,11 +67,13 @@ void TrafficManagerLocal::Start() {
 
 void TrafficManagerLocal::Run() {
 
-  bool sync_mode = parameters.GetSynchronousMode();
-
   while (run_traffic_manger.load()) {
+
+    bool synchronous_mode = parameters.GetSynchronousMode();
+    bool hybrid_physics_mode = parameters.GetHybridPhysicsMode();
+
     // Wait for external trigger to initiate cycle in synchronous mode.
-    if (sync_mode) {
+    if (synchronous_mode) {
       std::unique_lock<std::mutex> lock(step_execution_mutex);
       while (!step_begin.load()) {
         step_begin_trigger.wait(lock, [this]() {return step_begin.load();});
@@ -80,7 +82,7 @@ void TrafficManagerLocal::Run() {
     }
 
     // Skipping velocity update if elapsed time is less than 0.05s in asynchronous, hybrid mode.
-    if (!sync_mode)
+    if (!synchronous_mode && hybrid_physics_mode)
     {
       TimePoint current_instance = chr::system_clock::now();
       chr::duration<float> elapsed_time = current_instance - previous_update_instance;
@@ -88,14 +90,12 @@ void TrafficManagerLocal::Run() {
       if (elapsed_time.count() > 0.05) // HYBRID_MODE_DT
       {
         previous_update_instance = current_instance;
-      }
-      else if (hybrid_physics_mode)
-      {
+      } else {
         continue;
       }
     }
 
-    snippet_profiler.MeasureExecutionTime("ALSM", true);
+    // snippet_profiler.MeasureExecutionTime("ALSM", true);
     // TODO: Perform cleanup for traffic light response related strucutres too.
     AgentLifecycleAndStateManagement(registered_vehicles,
                                      vehicle_id_list,
@@ -113,12 +113,15 @@ void TrafficManagerLocal::Run() {
                                      parameters,
                                      world,
                                      local_map);
-    snippet_profiler.MeasureExecutionTime("ALSM", false);
+    // snippet_profiler.MeasureExecutionTime("ALSM", false);
 
     int current_registered_vehicles_state = registered_vehicles.GetState();
     unsigned long number_of_vehicles = vehicle_id_list.size();
-    if (registered_vehicles_state != current_registered_vehicles_state){
+    if (registered_vehicles_state != current_registered_vehicles_state
+        || number_of_vehicles != registered_vehicles.Size()){
 
+      vehicle_id_list = registered_vehicles.GetIDList();
+      number_of_vehicles = vehicle_id_list.size();
       unsigned long new_frame_size = INITIAL_SIZE + GROWTH_STEP_SIZE * (number_of_vehicles / GROWTH_STEP_SIZE);
       if (new_frame_size != control_frame_ptr->size())
       {
@@ -129,7 +132,23 @@ void TrafficManagerLocal::Run() {
       registered_vehicles_state = registered_vehicles.GetState();
     }
 
-    snippet_profiler.MeasureExecutionTime("Localization", true);
+    /////////////////////////////// DEBUG ///////////////////////////////
+    // for (const auto &kinematic_state_info: kinematic_state_map) {
+    //   const ActorId &actor_id = kinematic_state_info.first;
+    //   const KinematicState &state = kinematic_state_info.second;
+    //   cc::DebugHelper::Color debug_color {0u, 0u, 0u};
+    //   if (registered_vehicles.Contains(actor_id)) {
+    //     debug_color.r = 255u;
+    //   }
+    //   if (unregistered_actors.find(actor_id) != unregistered_actors.end()) {
+    //     debug_color.b = 255u;
+    //   }
+    //   debug_helper.DrawPoint(state.location + cg::Location(0, 0, 2),
+    //                          0.2f, debug_color, 0.01f);
+    // }
+    /////////////////////////////////////////////////////////////////////
+
+    // snippet_profiler.MeasureExecutionTime("Localization", true);
     for (unsigned long index = 0u; index < vehicle_id_list.size(); ++index)
     {
       Localization(index,
@@ -141,9 +160,9 @@ void TrafficManagerLocal::Run() {
                    parameters,
                    last_lane_change_location);
     }
-    snippet_profiler.MeasureExecutionTime("Localization", false);
+    // snippet_profiler.MeasureExecutionTime("Localization", false);
 
-    snippet_profiler.MeasureExecutionTime("Collision", true);
+    // snippet_profiler.MeasureExecutionTime("Collision", true);
     for (unsigned long index = 0u; index < vehicle_id_list.size(); ++index)
     {
       CollisionAvoidance(index,
@@ -157,9 +176,9 @@ void TrafficManagerLocal::Run() {
                          collision_locks,
                          collision_frame_ptr);
     }
-    snippet_profiler.MeasureExecutionTime("Collision", false);
+    // snippet_profiler.MeasureExecutionTime("Collision", false);
 
-    snippet_profiler.MeasureExecutionTime("TrafficLight", true);
+    // snippet_profiler.MeasureExecutionTime("TrafficLight", true);
     for (unsigned long index = 0u; index < vehicle_id_list.size(); ++index)
     {
       TrafficLightResponse(index,
@@ -172,9 +191,9 @@ void TrafficManagerLocal::Run() {
                            vehicle_last_junction,
                            tl_frame_ptr);
     }
-    snippet_profiler.MeasureExecutionTime("TrafficLight", false);
+    // snippet_profiler.MeasureExecutionTime("TrafficLight", false);
 
-    snippet_profiler.MeasureExecutionTime("MotionPlan", true);
+    // snippet_profiler.MeasureExecutionTime("MotionPlan", true);
     for (unsigned long index = 0u; index < vehicle_id_list.size(); ++index)
     {
       MotionPlan(index,
@@ -193,32 +212,34 @@ void TrafficManagerLocal::Run() {
                  teleportation_instance,
                  control_frame_ptr);
     }
-    snippet_profiler.MeasureExecutionTime("MotionPlan", false);
+    // snippet_profiler.MeasureExecutionTime("MotionPlan", false);
 
-    if (sync_mode)
+    if (synchronous_mode)
     {
       episode_proxy.Lock()->ApplyBatchSync(*control_frame_ptr.get(), false);
+
+      step_end.store(true);
+      step_end_trigger.notify_one();
     }
     else
     {
       episode_proxy.Lock()->ApplyBatch(*control_frame_ptr.get(), false);
     }
-
-    // Wait for external trigger to complete cycle in synchronous mode.
-    if (sync_mode) {
-      std::unique_lock<std::mutex> lock(step_execution_mutex);
-      while (!step_end.load()) {
-        step_end_trigger.wait(lock, [this]() {return step_end.load();});
-      }
-      // Set flag to false, unblock RunStep() call and release mutex lock.
-      step_end.store(false);
-      step_complete_trigger.notify_one();
-    }
-    else {
-      // TODO : Remove dependency on sleep or find a way to reduce sleep time.
-      std::this_thread::sleep_for(0.01s);
-    }
   }
+}
+
+bool TrafficManagerLocal::SynchronousTick() {
+  if (parameters.GetSynchronousMode()) {
+    step_begin.store(true);
+    step_begin_trigger.notify_one();
+
+    std::unique_lock<std::mutex> lock(step_execution_mutex);
+    while (!step_end.load()) {
+      step_end_trigger.wait(lock, [this]() {return step_end.load();});
+    }
+    step_end.store(false);
+  }
+  return true;
 }
 
 void TrafficManagerLocal::Stop() {
@@ -240,7 +261,6 @@ void TrafficManagerLocal::Stop() {
   idle_time.clear();
   elapsed_last_actor_destruction = 0.0f;
   hero_vehicle = nullptr;
-  hybrid_physics_mode = false;
   kinematic_state_map.clear();
   static_attribute_map.clear();
   tl_state_map.clear();
@@ -266,24 +286,6 @@ void TrafficManagerLocal::Reset() {
   world = cc::World(episode_proxy);
   SetupLocalMap();
   Start();
-}
-
-bool TrafficManagerLocal::SynchronousTick() {
-  if (parameters.GetSynchronousMode()) {
-    std::unique_lock<std::mutex> lock(step_execution_mutex);
-
-    step_begin.store(true);
-    step_begin_trigger.notify_one();
-
-    step_end.store(true);
-    step_end_trigger.notify_one();
-
-    while (step_end.load()) {
-      step_complete_trigger.wait(lock, [this]() {return !step_end.load();});
-    }
-  }
-
-  return true;
 }
 
 void TrafficManagerLocal::RegisterVehicles(const std::vector<ActorPtr>& vehicle_list) {
