@@ -20,10 +20,6 @@
 #include "carla/trafficmanager/TrackTraffic.h"
 #include "carla/trafficmanager/VehicleStateAndAttributeQuery.h"
 
-#define MIN(a, b) a > b ? b : a
-#define MAX(a, b) a > b ? a : b
-#define SQUARE(a) a * a
-
 namespace carla
 {
 namespace traffic_manager
@@ -61,8 +57,8 @@ void Localization(const unsigned long index,
   const float vehicle_speed = vehicle_velocity_vector.Length();
 
   // Speed dependent waypoint horizon length.
-  const float horizon_square = MIN(SQUARE(vehicle_speed * HORIZON_RATE + MINIMUM_HORIZON_LENGTH),
-                                   SQUARE(MAXIMUM_HORIZON_LENGTH));
+  float horizon_length = MIN(vehicle_speed * HORIZON_RATE + MINIMUM_HORIZON_LENGTH, MAXIMUM_HORIZON_LENGTH);
+  const float horizon_square = SQUARE(horizon_length);
 
   if (buffer_map->find(actor_id) == buffer_map->end()) {
     buffer_map->insert({actor_id, Buffer()});
