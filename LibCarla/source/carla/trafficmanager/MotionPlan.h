@@ -2,7 +2,6 @@
 /// This file has functionality for motion planning based on information
 /// from localization, collision avoidance and traffic light response.
 
-#include "carla/client/DebugHelper.h"
 #include "carla/client/detail/EpisodeProxy.h"
 #include "carla/rpc/VehicleControl.h"
 #include "carla/rpc/Command.h"
