@@ -8,7 +8,7 @@
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define SQUARE(a) ((a) * (a))
-#define RATE(MaxY, MinY, DiffX) (MaxY - MinY) / DiffX
+#define RATE(MaxY, MinY, DiffX) (((MaxY) - (MinY)) / (DiffX))
 
 namespace carla
 {

@@ -214,7 +214,7 @@ float GetBoundingBoxExtention(const ActorId actor_id,
                               const CollisionLockMap &collision_lock_map)
 {
 
-  const float velocity = cg::Math::Dot(kinematic_state.location, kinematic_state.rotation.GetForwardVector());
+  const float velocity = cg::Math::Dot(kinematic_state.velocity, kinematic_state.rotation.GetForwardVector());
   float bbox_extension;
   // Using a linear function to calculate boundary length.
   bbox_extension = BOUNDARY_EXTENSION_RATE * velocity + BOUNDARY_EXTENSION_MINIMUM;
@@ -478,9 +478,10 @@ std::pair<bool, float> NegotiateCollision(const ActorId reference_vehicle_id,
   float other_bounding_box_extension = GetBoundingBoxExtention(other_actor_id, other_vehicle_state, collision_locks);
   // Calculate minimum distance between vehicle to consider collision negotiation.
   float inter_vehicle_length = reference_vehicle_length + other_vehicle_length;
-  float ego_detection_range = std::pow(ego_bounding_box_extension + inter_vehicle_length, 2.0f);
-  float cross_detection_range = std::pow(ego_bounding_box_extension + inter_vehicle_length
-                                          + other_bounding_box_extension, 2.0f);
+  float ego_detection_range = SQUARE(ego_bounding_box_extension + inter_vehicle_length);
+  float cross_detection_range = SQUARE(ego_bounding_box_extension
+                                       + inter_vehicle_length
+                                       + other_bounding_box_extension);
 
   // Conditions to consider collision negotiation.
   bool other_vehicle_in_ego_range = inter_vehicle_distance < ego_detection_range;
@@ -525,8 +526,9 @@ std::pair<bool, float> NegotiateCollision(const ActorId reference_vehicle_id,
     // Whichever vehicle's path is farthest away from the other vehicle gets priority to move.
     if (geodesic_path_bbox_touching
         && ((!vehicle_bbox_touching
-          && (!ego_path_clear || (ego_path_clear && other_path_clear && !ego_path_priority)))
-            || (vehicle_bbox_touching && !ego_angular_priority))) {
+          && (!ego_path_clear || (ego_path_clear && other_path_clear && !ego_angular_priority && !ego_path_priority)))
+            || (vehicle_bbox_touching && !ego_angular_priority && !ego_path_priority))) {
+
       hazard = true;
 
       const float specific_distance_margin = MAX(reference_lead_distance, BOUNDARY_EXTENSION_MINIMUM);
