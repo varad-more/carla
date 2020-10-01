@@ -11,7 +11,7 @@ for blueprint in blueprints:
        print('  - {}'.format(attr))
 ```
   
-Check out our [blueprint tutorial](../python_api_tutorial/#blueprints).  
+Check out the [introduction to blueprints](core_actors.md).  
 
 ### controller
 - **<font color="#498efc">controller.ai.walker</font>**  
@@ -32,10 +32,11 @@ Check out our [blueprint tutorial](../python_api_tutorial/#blueprints).
         - `lens_y_size` (_Float_)<sub>_ – Modifiable_</sub>
         - `role_name` (_String_)<sub>_ – Modifiable_</sub>
         - `sensor_tick` (_Float_)<sub>_ – Modifiable_</sub>
-- **<font color="#498efc">sensor.camera.rgb</font>**  
+- **<font color="#498efc">sensor.camera.dvs</font>**  
     - **Attributes:**
         - `black_clip` (_Float_)<sub>_ – Modifiable_</sub>
         - `blade_count` (_Int_)<sub>_ – Modifiable_</sub>
+        - `bloom_intensity` (_Float_)<sub>_ – Modifiable_</sub>
         - `blur_amount` (_Float_)<sub>_ – Modifiable_</sub>
         - `blur_radius` (_Float_)<sub>_ – Modifiable_</sub>
         - `calibration_constant` (_Float_)<sub>_ – Modifiable_</sub>
@@ -57,6 +58,58 @@ Check out our [blueprint tutorial](../python_api_tutorial/#blueprints).
         - `iso` (_Float_)<sub>_ – Modifiable_</sub>
         - `lens_circle_falloff` (_Float_)<sub>_ – Modifiable_</sub>
         - `lens_circle_multiplier` (_Float_)<sub>_ – Modifiable_</sub>
+        - `lens_flare_intensity` (_Float_)<sub>_ – Modifiable_</sub>
+        - `lens_k` (_Float_)<sub>_ – Modifiable_</sub>
+        - `lens_kcube` (_Float_)<sub>_ – Modifiable_</sub>
+        - `lens_x_size` (_Float_)<sub>_ – Modifiable_</sub>
+        - `lens_y_size` (_Float_)<sub>_ – Modifiable_</sub>
+        - `log_eps` (_Float_)<sub>_ – Modifiable_</sub>
+        - `min_fstop` (_Float_)<sub>_ – Modifiable_</sub>
+        - `motion_blur_intensity` (_Float_)<sub>_ – Modifiable_</sub>
+        - `motion_blur_max_distortion` (_Float_)<sub>_ – Modifiable_</sub>
+        - `motion_blur_min_object_screen_size` (_Float_)<sub>_ – Modifiable_</sub>
+        - `negative_threshold` (_Float_)<sub>_ – Modifiable_</sub>
+        - `positive_threshold` (_Float_)<sub>_ – Modifiable_</sub>
+        - `refractory_period_ns` (_Int_)<sub>_ – Modifiable_</sub>
+        - `role_name` (_String_)<sub>_ – Modifiable_</sub>
+        - `sensor_tick` (_Float_)<sub>_ – Modifiable_</sub>
+        - `shoulder` (_Float_)<sub>_ – Modifiable_</sub>
+        - `shutter_speed` (_Float_)<sub>_ – Modifiable_</sub>
+        - `sigma_negative_threshold` (_Float_)<sub>_ – Modifiable_</sub>
+        - `sigma_positive_threshold` (_Float_)<sub>_ – Modifiable_</sub>
+        - `slope` (_Float_)<sub>_ – Modifiable_</sub>
+        - `temp` (_Float_)<sub>_ – Modifiable_</sub>
+        - `tint` (_Float_)<sub>_ – Modifiable_</sub>
+        - `toe` (_Float_)<sub>_ – Modifiable_</sub>
+        - `use_log` (_Bool_)<sub>_ – Modifiable_</sub>
+        - `white_clip` (_Float_)<sub>_ – Modifiable_</sub>
+- **<font color="#498efc">sensor.camera.rgb</font>**  
+    - **Attributes:**
+        - `black_clip` (_Float_)<sub>_ – Modifiable_</sub>
+        - `blade_count` (_Int_)<sub>_ – Modifiable_</sub>
+        - `bloom_intensity` (_Float_)<sub>_ – Modifiable_</sub>
+        - `blur_amount` (_Float_)<sub>_ – Modifiable_</sub>
+        - `blur_radius` (_Float_)<sub>_ – Modifiable_</sub>
+        - `calibration_constant` (_Float_)<sub>_ – Modifiable_</sub>
+        - `chromatic_aberration_intensity` (_Float_)<sub>_ – Modifiable_</sub>
+        - `chromatic_aberration_offset` (_Float_)<sub>_ – Modifiable_</sub>
+        - `enable_postprocess_effects` (_Bool_)<sub>_ – Modifiable_</sub>
+        - `exposure_compensation` (_Float_)<sub>_ – Modifiable_</sub>
+        - `exposure_max_bright` (_Float_)<sub>_ – Modifiable_</sub>
+        - `exposure_min_bright` (_Float_)<sub>_ – Modifiable_</sub>
+        - `exposure_mode` (_String_)<sub>_ – Modifiable_</sub>
+        - `exposure_speed_down` (_Float_)<sub>_ – Modifiable_</sub>
+        - `exposure_speed_up` (_Float_)<sub>_ – Modifiable_</sub>
+        - `focal_distance` (_Float_)<sub>_ – Modifiable_</sub>
+        - `fov` (_Float_)<sub>_ – Modifiable_</sub>
+        - `fstop` (_Float_)<sub>_ – Modifiable_</sub>
+        - `gamma` (_Float_)<sub>_ – Modifiable_</sub>
+        - `image_size_x` (_Int_)<sub>_ – Modifiable_</sub>
+        - `image_size_y` (_Int_)<sub>_ – Modifiable_</sub>
+        - `iso` (_Float_)<sub>_ – Modifiable_</sub>
+        - `lens_circle_falloff` (_Float_)<sub>_ – Modifiable_</sub>
+        - `lens_circle_multiplier` (_Float_)<sub>_ – Modifiable_</sub>
+        - `lens_flare_intensity` (_Float_)<sub>_ – Modifiable_</sub>
         - `lens_k` (_Float_)<sub>_ – Modifiable_</sub>
         - `lens_kcube` (_Float_)<sub>_ – Modifiable_</sub>
         - `lens_x_size` (_Float_)<sub>_ – Modifiable_</sub>
@@ -88,6 +141,21 @@ Check out our [blueprint tutorial](../python_api_tutorial/#blueprints).
         - `role_name` (_String_)<sub>_ – Modifiable_</sub>
         - `sensor_tick` (_Float_)<sub>_ – Modifiable_</sub>
 - **<font color="#498efc">sensor.lidar.ray_cast</font>**  
+    - **Attributes:**
+        - `atmosphere_attenuation_rate` (_Float_)<sub>_ – Modifiable_</sub>
+        - `channels` (_Int_)<sub>_ – Modifiable_</sub>
+        - `dropoff_general_rate` (_Float_)<sub>_ – Modifiable_</sub>
+        - `dropoff_intensity_limit` (_Float_)<sub>_ – Modifiable_</sub>
+        - `dropoff_zero_intensity` (_Float_)<sub>_ – Modifiable_</sub>
+        - `lower_fov` (_Float_)<sub>_ – Modifiable_</sub>
+        - `noise_stddev` (_Float_)<sub>_ – Modifiable_</sub>
+        - `points_per_second` (_Int_)<sub>_ – Modifiable_</sub>
+        - `range` (_Float_)<sub>_ – Modifiable_</sub>
+        - `role_name` (_String_)<sub>_ – Modifiable_</sub>
+        - `rotation_frequency` (_Float_)<sub>_ – Modifiable_</sub>
+        - `sensor_tick` (_Float_)<sub>_ – Modifiable_</sub>
+        - `upper_fov` (_Float_)<sub>_ – Modifiable_</sub>
+- **<font color="#498efc">sensor.lidar.ray_cast_semantic</font>**  
     - **Attributes:**
         - `channels` (_Int_)<sub>_ – Modifiable_</sub>
         - `lower_fov` (_Float_)<sub>_ – Modifiable_</sub>
@@ -806,6 +874,13 @@ Check out our [blueprint tutorial](../python_api_tutorial/#blueprints).
         - `role_name` (_String_)<sub>_ – Modifiable_</sub>
         - `speed` (_Float_)<sub>_ – Modifiable_</sub>
 - **<font color="#498efc">walker.pedestrian.0014</font>**  
+    - **Attributes:**
+        - `age` (_String_)
+        - `gender` (_String_)
+        - `is_invincible` (_Bool_)<sub>_ – Modifiable_</sub>
+        - `role_name` (_String_)<sub>_ – Modifiable_</sub>
+        - `speed` (_Float_)<sub>_ – Modifiable_</sub>
+- **<font color="#498efc">walker.pedestrian.0015</font>**  
     - **Attributes:**
         - `age` (_String_)
         - `gender` (_String_)

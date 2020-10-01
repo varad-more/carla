@@ -22,6 +22,7 @@
 #include "carla/client/detail/WalkerNavigation.h"
 #include "carla/profiler/LifetimeProfiled.h"
 #include "carla/rpc/TrafficLightState.h"
+#include "carla/rpc/VehicleLightStateList.h"
 
 #include <boost/optional.hpp>
 
@@ -197,6 +198,10 @@ namespace detail {
 
     SharedPtr<BlueprintLibrary> GetBlueprintLibrary();
 
+    /// Returns a list of pairs where the firts element is the vehicle ID
+    /// and the second one is the light state
+    rpc::VehicleLightStateList GetVehiclesLightStates();
+
     SharedPtr<Actor> GetSpectator();
 
     rpc::EpisodeSettings GetEpisodeSettings() {
@@ -219,6 +224,11 @@ namespace detail {
 
     rpc::VehicleLightState GetVehicleLightState(const Vehicle &vehicle) const {
       return _client.GetVehicleLightState(vehicle.GetId());
+    }
+
+    /// Returns all the BBs of all the elements of the level
+    std::vector<geom::BoundingBox> GetLevelBBs(uint8_t queried_tag) const {
+      return _client.GetLevelBBs(queried_tag);
     }
 
     /// @}
@@ -309,24 +319,47 @@ namespace detail {
       return GetActorSnapshot(actor).velocity;
     }
 
-    void SetActorVelocity(const Actor &actor, const geom::Vector3D &vector) {
-      _client.SetActorVelocity(actor.GetId(), vector);
+    void SetActorTargetVelocity(const Actor &actor, const geom::Vector3D &vector) {
+      _client.SetActorTargetVelocity(actor.GetId(), vector);
     }
 
     geom::Vector3D GetActorAngularVelocity(const Actor &actor) const {
       return GetActorSnapshot(actor).angular_velocity;
     }
 
-    void SetActorAngularVelocity(const Actor &actor, const geom::Vector3D &vector) {
-      _client.SetActorAngularVelocity(actor.GetId(), vector);
+    void SetActorTargetAngularVelocity(const Actor &actor, const geom::Vector3D &vector) {
+      _client.SetActorTargetAngularVelocity(actor.GetId(), vector);
+    }
+    void EnableActorConstantVelocity(const Actor &actor, const geom::Vector3D &vector) {
+      _client.EnableActorConstantVelocity(actor.GetId(), vector);
     }
 
-    void AddActorImpulse(const Actor &actor, const geom::Vector3D &vector) {
-      _client.AddActorImpulse(actor.GetId(), vector);
+    void DisableActorConstantVelocity(const Actor &actor) {
+      _client.DisableActorConstantVelocity(actor.GetId());
+    }
+
+    void AddActorImpulse(const Actor &actor, const geom::Vector3D &impulse) {
+      _client.AddActorImpulse(actor.GetId(), impulse);
+    }
+
+    void AddActorImpulse(const Actor &actor, const geom::Vector3D &impulse, const geom::Vector3D &location) {
+      _client.AddActorImpulse(actor.GetId(), impulse, location);
+    }
+
+    void AddActorForce(const Actor &actor, const geom::Vector3D &force) {
+      _client.AddActorForce(actor.GetId(), force);
+    }
+
+    void AddActorForce(const Actor &actor, const geom::Vector3D &force, const geom::Vector3D &location) {
+      _client.AddActorForce(actor.GetId(), force, location);
     }
 
     void AddActorAngularImpulse(const Actor &actor, const geom::Vector3D &vector) {
       _client.AddActorAngularImpulse(actor.GetId(), vector);
+    }
+
+    void AddActorTorque(const Actor &actor, const geom::Vector3D &torque) {
+      _client.AddActorAngularImpulse(actor.GetId(), torque);
     }
 
     geom::Vector3D GetActorAcceleration(const Actor &actor) const {
@@ -343,6 +376,10 @@ namespace detail {
 
     void SetActorSimulatePhysics(Actor &actor, bool enabled) {
       _client.SetActorSimulatePhysics(actor.GetId(), enabled);
+    }
+
+    void SetActorEnableGravity(Actor &actor, bool enabled) {
+      _client.SetActorEnableGravity(actor.GetId(), enabled);
     }
 
     /// @}
@@ -385,8 +422,8 @@ namespace detail {
     // =========================================================================
     /// @{
 
-    std::string StartRecorder(std::string name) {
-      return _client.StartRecorder(std::move(name));
+    std::string StartRecorder(std::string name, bool additional_data) {
+      return _client.StartRecorder(std::move(name), additional_data);
     }
 
     void StopRecorder(void) {
@@ -416,6 +453,10 @@ namespace detail {
     void SetReplayerIgnoreHero(bool ignore_hero) {
       _client.SetReplayerIgnoreHero(ignore_hero);
     }
+
+    void StopReplayer(bool keep_actors) {
+      _client.StopReplayer(keep_actors);
+  }
 
     /// @}
     // =========================================================================
@@ -453,6 +494,14 @@ namespace detail {
 
     void FreezeTrafficLight(TrafficLight &trafficLight, bool freeze) {
       _client.FreezeTrafficLight(trafficLight.GetId(), freeze);
+    }
+
+    void ResetTrafficLightGroup(TrafficLight &trafficLight) {
+      _client.ResetTrafficLightGroup(trafficLight.GetId());
+    }
+
+    void ResetAllTrafficLights() {
+      _client.ResetAllTrafficLights();
     }
 
     std::vector<ActorId> GetGroupTrafficLights(TrafficLight &trafficLight) {
@@ -512,6 +561,8 @@ namespace detail {
       DEBUG_ASSERT(_episode != nullptr);
       _episode->RemoveLightUpdateChangeEvent(id);
     }
+
+    void FreezeAllTrafficLights(bool frozen);
 
     /// @}
 

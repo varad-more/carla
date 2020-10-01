@@ -6,7 +6,7 @@ rem Run it through a cmd with the x64 Visual C++ Toolset enabled.
 rem https://wiki.unrealengine.com/How_to_package_your_game_with_commands
 
 set LOCAL_PATH=%~dp0
-set "FILE_N=-[%~n0]:"
+set FILE_N=-[%~n0]:
 
 rem Print batch params (debug purpose)
 echo %FILE_N% [Batch params]: %*
@@ -47,6 +47,7 @@ if not "%1"=="" (
         set DO_PACKAGE=false
         set DO_COPY_FILES=false
         set PACKAGES=%~2
+        shift
     )
 
     if "%1"=="-h" (
@@ -148,6 +149,7 @@ if %DO_COPY_FILES%==true (
     echo f | xcopy /y "!XCOPY_FROM!Docs\release_readme.md"                          "!XCOPY_TO!README"
     echo f | xcopy /y "!XCOPY_FROM!Util\Docker\Release.Dockerfile"                  "!XCOPY_TO!Dockerfile"
     echo f | xcopy /y "!XCOPY_FROM!PythonAPI\carla\dist\*.egg"                      "!XCOPY_TO!PythonAPI\carla\dist\"
+    echo f | xcopy /y /s "!XCOPY_FROM!PythonAPI\carla\data\*"                          "!XCOPY_TO!PythonAPI\carla\data\"
     echo d | xcopy /y /s "!XCOPY_FROM!Co-Simulation"                                "!XCOPY_TO!Co-Simulation"
     echo d | xcopy /y /s "!XCOPY_FROM!PythonAPI\carla\agents"                       "!XCOPY_TO!PythonAPI\carla\agents"
     echo f | xcopy /y "!XCOPY_FROM!PythonAPI\carla\scene_layout.py"                 "!XCOPY_TO!PythonAPI\carla\"
